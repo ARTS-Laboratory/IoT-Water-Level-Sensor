@@ -1,12 +1,11 @@
 # Systems Variations  
 Variations of the IoT water height sensor
 
-## Ultra-sound and Pressure Trandsucer
-* Sensing system designed with an ultra-sound sensor and a pressure transducer.
+## Celluar
+* Sensing system designed with celluar data transfer
 
-## Ultra-sound and Camera
-* Sensing system designed with an ultra-sound sensor and an optical camera.
-
+## WiFi
+* Sensing system designed with celluar data transfer
 
 
 
