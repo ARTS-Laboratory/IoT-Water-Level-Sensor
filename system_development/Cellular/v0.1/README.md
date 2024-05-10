@@ -1,4 +1,4 @@
-# Ultra-sound and Pressure Trandsucer v0.1
+# Cellular v0.1
 
 This is an Arduino Mega based stage sensor developed by interns at the South Carolina Department of Health and Environmental Control (SC DHEC) Dam Safety Program. The purpose of this sensor is to provide a low-cost, open-source alternative to traditional gaging equipment. Both an ultrasonic sensor and a pressure transducer are used to measure stage, and all data is sent via the Hologram cellular network to a graphic user interface (GUI) hosted on Adafruit IO. *Note: this repository was formerly named "DHEC-Stage-Sensor".
 
