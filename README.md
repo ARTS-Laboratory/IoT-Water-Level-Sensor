@@ -28,7 +28,7 @@ Cite this as:
   howpublished = {GitHub},  
   title  = {IoT Water Level Sensor},
   groups = {ARTS-Lab},    
-  url    = {https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor },   
+  url    = {https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor},   
 }
 
 
