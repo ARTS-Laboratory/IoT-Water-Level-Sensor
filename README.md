@@ -12,7 +12,7 @@ Figure 1: Sensor deployed on the primary spillway of a dam transmitting data to 
 </p>
 
 ## System Development
-Contains the hardware and sofware developed for the project. 
+Contains the hardware and software developed for the project. 
 
 ## Licensing and Citation
 
@@ -28,7 +28,7 @@ Cite this as:
   howpublished = {GitHub},  
   title  = {IoT Water Level Sensor},
   groups = {ARTS-Lab},    
-  url    = {https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor },   
+  url    = {https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor},   
 }
 
 
