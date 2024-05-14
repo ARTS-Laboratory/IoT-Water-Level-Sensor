@@ -26,14 +26,14 @@ Datalogging Board PCB,Custom,Custom,OSH Park,N/A,
 Separate Electronics and Parts,Manufacturer Part #,Supplier,Distributer #,,
 Arduino Mega,Arduino Mega 2560 Rev3,Elegoo,,,$19.99
 SIM Arduino Shield,Sim7000 LTE v.6.0,Botletics,Amazon ASIN B07H3XKNLH,,$69.00
-SIM Card,Global Hyper eUICC IOT,Hologram,,,
-Battery (12 V),YB12011000-USB,TalentCell,,,
-Wires (M/F),Multicolored Dupont Wire,Elegoo,,,
-Pins and Headers (M/F),8541770554,Glarks,B07CWSXY7P (Amazon ASIN),,
-MicroSD Card,5249,Adafruit,Digikey # 1528-5249-ND,,
+SIM Card,Global Hyper eUICC IOT,Hologram,,,$5.00
+Battery (12 V),YB12011000-USB,TalentCell,Amazon ASIN B016BJCRUO,,$61.99
+Wires (M/F),Multicolored Dupont Wire,Elegoo,,,$6.59
+Pins and Headers (M/F),8541770554,Glarks,Amazon ASIN B07CWSXY7P,,$12.98
+MicroSD Card,5249,Adafruit,Digikey # 1528-5249-ND,,$3.61
 ,,,,,
 Frame / Box Parts,Manufacturer Part #,Supplier,Amazon ASIN,Size,
-Waterproof Electronics Box,B0B87V7QTH,TICONN,B0B87V7QTH,"4.3 x 6.7  x 8.7""",
-Cable Glands,B4190,Tuparka,B0BLYSTRL5,,
-Solar Panel 30W,BC-30W-ZM,Suner Power,,,
-SAE to Barrel Jack Wire,SAEPCSP-1,E-Outstanding,B08JG9XW3C,,
+Waterproof Electronics Box,B0B87V7QTH,TICONN,B0B87V7QTH,"4.3 x 6.7  x 8.7""",$26.96
+Cable Glands,B4190,Tuparka,B0BLYSTRL5,,$13.89
+Solar Panel 30W,BC-30W-ZM,Suner Power,,,$69.95
+SAE to Barrel Jack Wire,SAEPCSP-1,E-Outstanding,B08JG9XW3C,,$7.99
