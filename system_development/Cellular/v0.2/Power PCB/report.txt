@@ -1,0 +1,11 @@
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-F_Cu.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-B_Cu.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-F_Paste.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-B_Paste.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-F_Silkscreen.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-B_Silkscreen.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-F_Mask.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-B_Mask.gbr'.
+Plotted to 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-Edge_Cuts.gbr'.
+Created Gerber job file 'C:\Users\User\Documents\GitHub\IoT-Water-Level-Sensor\system_development\Cellular\v0.2\Power PCB\Power PCB-job.gbrjob'.
+Info: Done.
