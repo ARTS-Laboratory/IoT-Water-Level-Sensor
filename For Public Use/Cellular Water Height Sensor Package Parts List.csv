@@ -21,10 +21,11 @@ Capacitor SMD,CL10B105KP8NNNC,1276-1946-2-ND,Samsung Electro-Mechanics,C1 / C2,$
 SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,$4.99 (for 12)
 Real Time Clock Module,B09KPC8JZQ,ASIN (Amazon),AITRIP,RT1,$7.99 (for 3)
 Ultrasonic Sensor,B0C73XZRFQ,ASIN (Amazon),Shutao,US1 / US2,$21.99 (for 5)
+Datalogging Board PCB,Custom,Custom,OSH Park,N/A,
 ,,,,,
 Separate Electronics and Parts,Manufacturer Part #,Supplier,Distributer #,,
-Arduino Mega,Arduino Mega 2560 Rev3,Arduino(or Elegoo),,,
-SIM Arduino Shield,Sim7000 LTE v.6.0,Botletics,,,
+Arduino Mega,Arduino Mega 2560 Rev3,Elegoo,,,$19.99
+SIM Arduino Shield,Sim7000 LTE v.6.0,Botletics,Amazon ASIN B07H3XKNLH,,$69.00
 SIM Card,Global Hyper eUICC IOT,Hologram,,,
 Battery (12 V),YB12011000-USB,TalentCell,,,
 Wires (M/F),Multicolored Dupont Wire,Elegoo,,,
