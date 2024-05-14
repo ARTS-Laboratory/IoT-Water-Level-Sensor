@@ -14,7 +14,7 @@ Diode Thru-Hole,SF28G,1655-SF28GCT-ND,SMC Diode Solutions,D2,
 Capacitor SMD,GRM188R60J226MEA0J,490-7612-2-ND,Murata Electronics,C3,
 Resistor SMD,RC1206FR-07510RL,311-510FRTR-ND,YAGEO,R2,
 ,,,,,
-Datalogging Board,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic
+Datalogging Board,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,
 3.3 V Linear Regulator,TC2014-3.3VCTTR,TC2014-3.3VCTTR-ND,Microchip Technology,U1,
 Capacitor SMD,CL10B105KP8NNNC,1276-1946-2-ND,Samsung Electro-Mechanics,C1 / C2,
 SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,
