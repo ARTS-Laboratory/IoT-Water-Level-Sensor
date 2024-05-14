@@ -5,7 +5,7 @@ This folder contains all of the files for general use by the public.
 The parts list includes all of the parts used to construct the system as well as information on how to order them.
 
 The PCB Information folder contains documents showing the electrical wiring and 3D view of the two customs PCBS.
-The KiCad Board 7.0 files are used in conjunction with OSH Park to have these custom boards printed for use.
+The .kicad_pcb files are used in conjunction with OSH Park to have these custom boards printed for use.
 
 ## Licensing and Citation
 
