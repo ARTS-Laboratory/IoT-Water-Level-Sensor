@@ -16,11 +16,11 @@ Resistor SMD,RC1206FR-07510RL,311-510FRTR-ND,YAGEO,R2,$0.10
 Power Board PCB,Custom,Custom,OSH Park,N/A,
 ,,,,,
 Datalogging Board,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,
-3.3 V Linear Regulator,TC2014-3.3VCTTR,TC2014-3.3VCTTR-ND,Microchip Technology,U1,
-Capacitor SMD,CL10B105KP8NNNC,1276-1946-2-ND,Samsung Electro-Mechanics,C1 / C2,
-SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,
-Real Time Clock Module,B08XQ8TT7Z,ASIN (Amazon),AOICRIE,RT1,
-Ultrasonic Sensor,B0C73XZRFQ,ASIN (Amazon),Shutao,US1 / US2,
+3.3 V Linear Regulator,TC2014-3.3VCTTR,TC2014-3.3VCTTR-ND,Microchip Technology,U1,$0.49
+Capacitor SMD,CL10B105KP8NNNC,1276-1946-2-ND,Samsung Electro-Mechanics,C1 / C2,$0.10
+SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,$4.99 (for 12)
+Real Time Clock Module,B09KPC8JZQ,ASIN (Amazon),AITRIP,RT1,$7.99 (for 3)
+Ultrasonic Sensor,B0C73XZRFQ,ASIN (Amazon),Shutao,US1 / US2,$21.99 (for 5)
 ,,,,,
 Separate Electronics and Parts,Manufacturer Part #,Supplier,Distributer #,,
 Arduino Mega,Arduino Mega 2560 Rev3,Arduino(or Elegoo),,,
