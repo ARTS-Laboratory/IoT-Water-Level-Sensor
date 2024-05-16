@@ -26,7 +26,7 @@ Cite this as:
 @Misc{ARTSLabIotWaterLevel,    
   author = {ARTS-Lab},  
   howpublished = {GitHub},  
-  title  = {IoT Water Level Sensor},
+  title  = {IoT Water Level Sensor},   
   groups = {ARTS-Lab},    
   url    = {https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor},   
 }
