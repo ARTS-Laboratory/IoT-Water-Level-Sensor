@@ -5,7 +5,7 @@ Variations of the IoT water height sensor
 * Sensing system designed with celluar data transfer
 
 ## WiFi
-* Sensing system designed with celluar data transfer
+* Sensing system designed with Wifi data transfer
 
 
 

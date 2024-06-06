@@ -6,20 +6,22 @@
 //in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Health and Environmental Control (SCDHEC)
 
 /************************* All Included Libraries - Do not change this section! *********************************/
-
+//The below three libraries are special. See the Readme for more information.
 #include "BotleticsSIM7000.h" // Botletics SIM7000 library developed by Timothy Woo
 #include "Adafruit_MQTT.h" //Adafruit library for connection via MQTT to the Adafruit IO server
 #include "Adafruit_MQTT_FONA.h" //Adafruit library for using cellular data to connect to Adafruit IO server. 
-//See Readme in Special Libraries folder for more information on formatting the above three libraries
+//The below two libraries work the SD reader as well as the SPI for communicating with the SD card reader
 #include <SPI.h>  //SPI communication library
 #include <SD.h> //SD card library
+//The below three libraries work the INA219 chip, RTC, and the I2C protocol for communicating with them
+#include <Wire.h> //library for using I2C communication
 #include <Adafruit_INA219.h> //Adafruit library for controlling INA219 voltage/current sensing chip
-#include "NewPing.h" //New Ping library for use with the sonar sensors
-#include <Wire.h> //Wire library for communicating with I2C and the RTC
 #include <DS3231.h> //library for RTC module
-#include <LowPower.h>
+//******************
+#include <LowPower.h> //library for using the sleep mode watchdog timer
+#include "NewPing.h" //New Ping library for use with the sonar sensors
 
-/************************* Botletics SIM7000 Set Up *********************************/
+/************************* Botletics SIM7000 Set Up Section - Do not Edit! *********************************/
 #define SIMCOM_7000 //from Botletics library, determine the model of SIM chip
 // For botletics SIM7000 shield
 #define BOTLETICS_PWRKEY 6
@@ -40,7 +42,7 @@ SoftwareSerial *modemSerial = &modemSS;
 Adafruit_FONA_LTE modem = Adafruit_FONA_LTE();
 
 
-/************************* Adafruit.io Setup *********************************/
+/************************* Adafruit.io Setup - Enter your username and password for Adafruit IO here *********************************/
 #define AIO_SERVER      "io.adafruit.com" //Adafruit IO server information
 #define AIO_SERVERPORT  1883 //Adafruit IO server information
 #define AIO_USERNAME    "" //Username of Adafruit account you are trying to connect with
@@ -55,18 +57,18 @@ uint8_t txfailures = 0;
 /****************************** Creating Feeds for the Adafruit IO***************************************/
 // MQTT paths for Adafruit IO should follow the form: <username>/feeds/<feedname>
 // After Publish/Subscribe, the name of the feed is saved as a variable for later use!
-/****************************** Publishing Feeds for the Adafruit IO***************************************/
+/******************************Feeds for the Adafruit IO***************************************/
 //All Publish paths are for sending data from the Arduino to the Adafruit Server
 Adafruit_MQTT_Publish sonar1 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-1");
 Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-2");
 Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/battery-voltage");
-
+//Subscribe feeds send data from Adafruit IO to Arduino
+Adafruit_MQTT_Subscribe initialHeight = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/height");
 /****************************** Declaring Other Variables ***************************************/
-//random variables for running Botletics scripts
+//random variables for running Botletics scripts, do not edit
 uint8_t readline(char *buff, uint8_t maxbuff, uint16_t timeout = 0);
 char imei[16] = {0}; // Use this for device ID
 uint8_t type;
-
 
 // Char/String variables for holding the battery and height variables
 //for transmitting to Adafruit IO
@@ -84,14 +86,15 @@ const int echoPin2 = 44; //echo pin for sonar sensor 2
 const int maxDist = 450; // max distance for sonar sensor, same for both
 NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable for sonar sensor 1
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
-float distance1=0; //variable for distance measured by sonar sensor 1 used to publish to Adafruit IO via MQTT 
-float distance2=0; //variable for distance measured by sonar sensor 2 used to publish to Adafruit IO via MQTT 
+float distance1=0; //variable for distance measured by sonar sensor 1
+float distance2=0; //variable for distance measured by sonar sensor 2
 float origDist1=0; //Original distance for sensor 1 that is used to calibrate the height measurement of the water
 float origDist2=0; //Same as above for sensor 2
-float origHeight1 = 0; //Height of the water beneath sensor 1, measured at the time of installation
-//to calibrate the sensor readings
-float origHeight2 = 0; //Same for sensor 2
-float height1 = 0; //Height variable for the current water height calculated from distance1
+float origHeight = 0; //Elevation of water at set up, used
+//to calibrate the sensor readings (usually done in reference to sea level)
+//This defaults to 0, but is actually set up in the Adafruit IO dashboard
+float height1 = 0; //Height variable for the current water height calculated from ultrasonic sensor 1
+//(usually done with reference to sea level)
 float height2 = 0; //Same for sensor 2
 
 //Variables for setting up the SD card and RTC
@@ -100,13 +103,23 @@ const int chipSelect = 53; //Chip Select for the SD card
 char dayStampFileName[20]; //Char/string variable for holding the day stamp for naming
 //file in SD card
 RTClib myRTC; //RTC variable for using DS3231 library scripts
-uint8_t currentTime = 1;
-uint8_t lastTime = 1;
+
+//Variables governing the sampling rate of the sensor
+uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
+uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
+//See code later for more description of the above variables
+int delayTime = 10; //time in minutes between between readings
+//default to 1 minute, but this is set in the Adafruit IO Dashboard in the sampling rate tab
+int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
+//so that subscription commands work properly
+#define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
 
 //*******************************Void Set up************************************
 void setup() {
   Serial.begin(9600); //begin the Serial monitor
-  Wire.begin(); //begin communication with I2C, needed for RTC module
+  Wire.begin(); //begin communication with I2C, needed for RTC module and INA219 chip
+
+  //The below section activates the SD card
   Serial.print("Initializing SD card...");
 
   // see if the card is present and can be initialized:
@@ -115,30 +128,30 @@ void setup() {
     // don't do anything more:
     while (1);
   }
-  Serial.println("card initialized.");
 
+  //The below section activates and calibrates the INA219 for voltage monitoring
+  Serial.println("card initialized.");
   //These following lines start up and calibrate the INA219 chip
   if (! ina219.begin()) { //these lines initialize the INA219 chip
     Serial.println("Failed to find INA219 chip");
     while (1) { delay(10); }
   }
-  // To use a slightly lower 32V, 1A range (higher precision on amps):
-  ina219.setCalibration_32V_1A();
-  // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
-  //ina219.setCalibration_16V_400mA();
 
-  //These two lines ping the sonar sensors one time to calibrate them with an original distance
+  // To use a slightly lower 32V, 1A range (higher precision on amps):
+  //ina219.setCalibration_32V_1A();
+  // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
+  ina219.setCalibration_16V_400mA();
+
+  //These two lines ping the sonar sensors when the sensor package starts up
+  //to calibrate them with an original distance between them and the water surface
   origDist1 = sonar_sensor_1.ping_cm();
   origDist2 = sonar_sensor_2.ping_cm();
+
+  //The below section powers on and sets up the SIM7000 chip so that the
+  //package can connect to the cellular network
   pinMode(RST, OUTPUT);
   digitalWrite(RST, HIGH); // Default state
-}
-
-void loop() {
-  DateTime now = myRTC.now();  
-  currentTime = now.minute();
-  if (currentTime %5 == 0 && currentTime != lastTime ){
-    //The following lines are for powering on and starting up 
+  //The following lines are for powering on and starting up 
     //the SIM7000 Botletics shield
     modem.powerOn(BOTLETICS_PWRKEY); // Power on the module
     moduleSetup(); // Establishes first-time serial comm and prints IMEI
@@ -155,6 +168,7 @@ void loop() {
       }
       Serial.println(F("Enabled data!"));
     #endif
+      
     //The following section connects the SIM card to the cellular network and enables data
     //so we can transmit to Adafruit IO
     // Connect to cell network and verify connection
@@ -176,40 +190,68 @@ void loop() {
       Serial.println(F("Data already enabled!"));
     }
     Serial.println(F("---------------------"));
+    delay(1000);
 
+    //These lines set up the ability to subscribe from the Adafruit IO Dashboard
+    mqtt.subscribe(&initialHeight);
+    delay(3000);
+    MQTT_connect(); //This connects our sensor package to the Adafruit IO
+    delay(1000);
+}
+
+void loop() {
+  DateTime now = myRTC.now(); //creates the "now" variable from the RTC to save the timeStamp
+  currentTime = now.minute(); //saves the current minute as a variable
+
+  //This "if" loop contains all of the code to run the package on loop. The sampling rate set in the Adafruit Dashboard gives the
+  //frequency this loop runs on. Every nth minute, this loop will transmit data to the Adafruit IO server
+  if (currentTime %delayTime == 0 && currentTime != lastTime ){
     //This section creates the timestamps from the RTC module
     sprintf(timeStamp, "%02d:%02d:%02d %02d/%02d/%02d", now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());  
+    //the above line creates a timestamp that is used to date data saved to the SD card
     snprintf(dayStampFileName, 20, "%02d%02d%02d.txt", now.day(), now.month(), now.year());  
-    Serial.print(F("Date/Time: "));
-    Serial.println(timeStamp);
+    //the above line creates a name for the SD card files so that a new file is created every new day
+    //Serial.print(F("Date/Time: ")); //uncomment to debug
+    //Serial.println(timeStamp);
 
     //This line gets the voltage of the battery from the INA219 chip
     busVoltage = ina219.getBusVoltage_V()+0.8; //get voltage from battery and add 0.8V to account for drop across diode
 
-    //This section gets the current distance from the sonar sensors and calculates
-    //the current height based on the the original distance of the sonar sensor and original height of the water
-    // h = h0 + (d0-d)
-    distance1 = sonar_sensor_1.ping_cm();
-    distance2 = sonar_sensor_2.ping_cm();
-    height1 = origHeight1 + (origDist1 - distance1)/(2.54*12);
-    height2 = origHeight2 + (origDist2 - distance2)/(2.54*12);
-
-    //This creates string variables from numbers for transmission to Adafruit IO
-    dtostrf(height1, 1, 2, dist2Buff);
-    dtostrf(height2, 1, 2, dist1Buff);
-    dtostrf(busVoltage, 1, 2, battBuff);
-    
     //This section connects the device to Adafruit IO and publishes the variables
     // Ensure the connection to the MQTT server is alive (this will make the first
     // connection and automatically reconnect when disconnected). See the MQTT_connect
     // function definition further below.
     MQTT_connect();
+    //subscription packet subloop, this runs and waits for the toggle switch in Adafruit IO to turn on
+    Adafruit_MQTT_Subscribe *subscription;
+    while ((subscription = mqtt.readSubscription(5000))) {
+      if (subscription == &initialHeight) {
+        Serial.print(F("*** Initial water elevation is now: "));
+        Serial.println((char *)initialHeight.lastread);
+        delay(100);
+        origHeight = atof((char *)initialHeight.lastread);
+      }
+    delay(2000);
+    }
+
+    //This section gets the current distance from the sonar sensors and calculates
+    //the current height based on the the original distance of the sonar sensor and original height of the water
+    // h = h0 + (d0-d), and converts the reading to ft
+    distance1 = sonar_sensor_1.ping_cm();
+    distance2 = sonar_sensor_2.ping_cm();
+    height1 = origHeight + (origDist1 - distance1)/(2.54*12);
+    height2 = origHeight + (origDist2 - distance2)/(2.54*12);
+
+    //This creates string variables from numbers for transmission to Adafruit IO
+    dtostrf(height1, 1, 2, dist1Buff);
+    dtostrf(height2, 1, 2, dist2Buff);
+    dtostrf(busVoltage, 1, 2, battBuff);
+
     // Now publish all the data to different feeds!
     // The MQTT_publish_checkSuccess handles repetitive stuff.
     MQTT_publish_checkSuccess(sonar1, dist1Buff);
     MQTT_publish_checkSuccess(sonar2, dist2Buff);
     MQTT_publish_checkSuccess(batteryVoltage, battBuff);
-    
 
     // This section saves the data to the SD card
     Serial.println(dayStampFileName);
@@ -228,6 +270,8 @@ void loop() {
       Serial.println("error opening datalog.txt");
       }
     }
+    //The below section creates a new entry in SD card which records all the relevant
+    //information and the timestamp in a CSV format
     File dataFile = SD.open(dayStampFileName, FILE_WRITE);
     if (dataFile) {
         dataFile.print(height1);
@@ -245,17 +289,38 @@ void loop() {
     }
 
   // Delay until next post
-    modem.powerDown();
-    Serial.println("Powered Down!");
-    lastTime = currentTime;
+    lastTime = currentTime; //This prevents the "if" loop from running again and again
+    //in the same minute
+
+    Serial.println((char *)initialHeight.lastread); //uncomment to debug
+    Serial.println("Going to sleep!");
+    pingCount = 0; //reset the ping count
     delay(1000);
   } 
+  //Between sampling times, the Arduino is sent into light sleep which helps to save on power
+  //It wakes up every eight seconds to check the time and goes back to sleep unless the sampling rate
+  //conditions are met in the "if" loop
   else {
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+    pingCount++; //Add to the pingCount
+    Serial.println(pingCount); //uncomment to debug
+    delay(5);
+    //The Adafruit IO connection will die every 5 minutes without activity and this
+    //prevents the subscription commands from working. The below code pings the Adafruit server
+    //every 2.5 minutes to keep the connection alive in case the sampling rate is greater than 5 minutes
+    if (pingCount == 20){
+      if(! mqtt.ping()) {
+      mqtt.disconnect();
+      }
+      delay(1000);
+      pingCount = 0; //reset the ping counter
+    }
   }
-}
+}  
 
-//************************** Function Code - Do not alter these! **************************
+//Our custom code ends here. Everything below are premade function codes
+
+//************************** Function Codes - Do not alter these! **************************
 //This function is what activates the SIM7000 card in the Botletics shield
 void moduleSetup() {
   // SIM7000 takes about 3s to turn on and SIM7500 takes about 15s
@@ -341,7 +406,7 @@ void MQTT_connect() {
     Serial.println(mqtt.connectErrorString(ret));
     Serial.println("Retrying MQTT connection in 5 seconds...");
     mqtt.disconnect();
-    delay(5000);  // wait 5 seconds
+    delay(6000);  // wait 6 seconds
   }
   Serial.println("MQTT Connected!");
 }
