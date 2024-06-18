@@ -109,7 +109,6 @@ uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
 int delayTime = 10; //time in minutes between between readings
-//default to 1 minute, but this is set in the Adafruit IO Dashboard in the sampling rate tab
 int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
 //so that subscription commands work properly
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
@@ -123,29 +122,22 @@ void setup() {
   Serial.print("Initializing SD card...");
 
   // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-    // don't do anything more:
-    while (1);
+  while (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present. Retrying...");
+    delay(2000);
   }
-
-  //The below section activates and calibrates the INA219 for voltage monitoring
   Serial.println("card initialized.");
+
   //These following lines start up and calibrate the INA219 chip
-  if (! ina219.begin()) { //these lines initialize the INA219 chip
-    Serial.println("Failed to find INA219 chip");
-    while (1) { delay(10); }
+   while (!ina219.begin()) { //these lines initialize the INA219 chip
+    Serial.println("Failed to find INA219 chip. Retrying...");
+    delay(2000);
   }
 
   // To use a slightly lower 32V, 1A range (higher precision on amps):
   //ina219.setCalibration_32V_1A();
   // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
   ina219.setCalibration_16V_400mA();
-
-  //These two lines ping the sonar sensors when the sensor package starts up
-  //to calibrate them with an original distance between them and the water surface
-  origDist1 = sonar_sensor_1.ping_cm();
-  origDist2 = sonar_sensor_2.ping_cm();
 
   //The below section powers on and sets up the SIM7000 chip so that the
   //package can connect to the cellular network
@@ -230,6 +222,13 @@ void loop() {
         Serial.println((char *)initialHeight.lastread);
         delay(100);
         origHeight = atof((char *)initialHeight.lastread);
+        //These two lines ping the sonar sensors when the height is changed
+        //to calibrate them with an original distance between them and the water surface
+        origDist1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5));
+        delay(1000); //This second delay prevents the sensors from
+        //interfering with each other
+        origDist2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
+        delay(1000);
       }
     delay(2000);
     }
@@ -237,10 +236,11 @@ void loop() {
     //This section gets the current distance from the sonar sensors and calculates
     //the current height based on the the original distance of the sonar sensor and original height of the water
     // h = h0 + (d0-d), and converts the reading to ft
-    distance1 = sonar_sensor_1.ping_cm();
-    distance2 = sonar_sensor_2.ping_cm();
-    height1 = origHeight + (origDist1 - distance1)/(2.54*12);
-    height2 = origHeight + (origDist2 - distance2)/(2.54*12);
+    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5));
+    delay(1000); //This second delay keeps the sensors from interfering with each other
+    distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
+    height1 = origHeight + (origDist1 - distance1)/(12);
+    height2 = origHeight + (origDist2 - distance2)/(12);
 
     //This creates string variables from numbers for transmission to Adafruit IO
     dtostrf(height1, 1, 2, dist1Buff);
@@ -308,7 +308,7 @@ void loop() {
     //The Adafruit IO connection will die every 5 minutes without activity and this
     //prevents the subscription commands from working. The below code pings the Adafruit server
     //every 2.5 minutes to keep the connection alive in case the sampling rate is greater than 5 minutes
-    if (pingCount == 20){
+    if (pingCount == 10){
       if(! mqtt.ping()) {
       mqtt.disconnect();
       }
