@@ -61,13 +61,13 @@ To get the CellularCodev0.2 to work with your particular Adafruit account, we wi
 First acquire your username and key from the Adafruit IO website:
 
 <p align="center">
-<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20IO%20Key.PNG" alt="drawing" width=300"/>
+<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20IO%20Key.PNG" alt="drawing" width=400"/>
 </p>
 
 Then, you must create feeds so that the key of the feed matches the provided Arduino code. If your key is not the same as the ones pictured, your data will not be transmitted properly.
 
 <p align="center">
-<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20IO%20Feed%20Names.PNG" alt="drawing" width=300"/>
+<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20IO%20Feed%20Names.PNG" alt="drawing" width=400"/>
 </p>
 
 Using your Adafruit username and key, fill in this line in the code:
