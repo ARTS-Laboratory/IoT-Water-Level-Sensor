@@ -12,7 +12,7 @@ Figure 1: Sensor deployed on the primary spillway of a dam transmitting data to 
 </p>
 
 ## System Development
-Contains the hardware and software developed for the project. 
+Contains the hardware and software developed for the project. Use this folder to create and troubleshoot a sensor.
 
 ## Licensing and Citation
 

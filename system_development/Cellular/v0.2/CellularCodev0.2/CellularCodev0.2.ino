@@ -83,7 +83,7 @@ const int trigPin1 = 47; //trigger pin for sonar sensor 1
 const int echoPin1 = 46; //echo pin for sonar sensor 1
 const int trigPin2 = 45; //trigger pin for sonar sensor 2
 const int echoPin2 = 44; //echo pin for sonar sensor 2
-const int maxDist = 450; // max distance for sonar sensor, same for both
+const int maxDist = 450; // max distance in cm for sonar sensor, same for both
 NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable for sonar sensor 1
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
 float distance1=0; //variable for distance measured by sonar sensor 1
@@ -108,7 +108,7 @@ RTClib myRTC; //RTC variable for using DS3231 library scripts
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 10; //time in minutes between between readings
+int delayTime = 2; //time in minutes between between readings
 int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
 //so that subscription commands work properly
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
@@ -186,7 +186,7 @@ void setup() {
 
     //These lines set up the ability to subscribe from the Adafruit IO Dashboard
     mqtt.subscribe(&initialHeight);
-    delay(3000);
+    delay(1000);
     MQTT_connect(); //This connects our sensor package to the Adafruit IO
     delay(1000);
 }
@@ -224,11 +224,18 @@ void loop() {
         origHeight = atof((char *)initialHeight.lastread);
         //These two lines ping the sonar sensors when the height is changed
         //to calibrate them with an original distance between them and the water surface
-        origDist1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5));
+        origDist1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //ping_median 
+        //takes 5 quick readings with the sonar sensor and takes the median from this
+        //data set in order to eliminate misreads, then convert_in converts the ping_median
+        //which is in milliseconds into inches according to the speed of sound
         delay(1000); //This second delay prevents the sensors from
         //interfering with each other
-        origDist2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
+        origDist2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above
         delay(1000);
+        //Serial.println("Original Distances are: "); uncomment to debug
+        // Serial.print(origDist1);
+        // Serial.print(" ");
+        // Serial.println(origDist2);
       }
     delay(2000);
     }
@@ -236,11 +243,16 @@ void loop() {
     //This section gets the current distance from the sonar sensors and calculates
     //the current height based on the the original distance of the sonar sensor and original height of the water
     // h = h0 + (d0-d), and converts the reading to ft
-    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5));
+    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //same as above
     delay(1000); //This second delay keeps the sensors from interfering with each other
     distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
-    height1 = origHeight + (origDist1 - distance1)/(12);
+    height1 = origHeight + (origDist1 - distance1)/(12); //convert from inches to feet
     height2 = origHeight + (origDist2 - distance2)/(12);
+
+    // Serial.print("Height 1 is: "); //uncomment to debug
+    // Serial.print(height1);
+    // Serial.print("  Height 2 is: ");
+    // Serial.print(height2);
 
     //This creates string variables from numbers for transmission to Adafruit IO
     dtostrf(height1, 1, 2, dist1Buff);
@@ -292,7 +304,7 @@ void loop() {
     lastTime = currentTime; //This prevents the "if" loop from running again and again
     //in the same minute
 
-    Serial.println((char *)initialHeight.lastread); //uncomment to debug
+    //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
     pingCount = 0; //reset the ping count
     delay(1000);
@@ -303,11 +315,11 @@ void loop() {
   else {
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
     pingCount++; //Add to the pingCount
-    Serial.println(pingCount); //uncomment to debug
+    //Serial.println(pingCount); //uncomment to debug
     delay(5);
     //The Adafruit IO connection will die every 5 minutes without activity and this
     //prevents the subscription commands from working. The below code pings the Adafruit server
-    //every 2.5 minutes to keep the connection alive in case the sampling rate is greater than 5 minutes
+    //every minute to keep the connection alive in case the sampling rate is greater than 5 minutes
     if (pingCount == 10){
       if(! mqtt.ping()) {
       mqtt.disconnect();
