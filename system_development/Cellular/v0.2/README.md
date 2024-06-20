@@ -60,11 +60,15 @@ To get the CellularCodev0.2 to work with your particular Adafruit account, we wi
 
 First acquire your username and key from the Adafruit IO website:
 
-(picture)
+<p align="center">
+<img src="media/Adafruit IO Key.png" alt="drawing" width="600"/>
+</p>
 
 Then, you must create feeds so that the key of the feed matches the provided Arduino code. If your key is not the same as the ones pictured, your data will not be transmitted properly.
 
-(picture)
+<p align="center">
+<img src="media/Adafruit IO Feed Names.png" alt="drawing" width="600"/>
+</p>
 
 Using your Adafruit username and key, fill in this line in the code:
 
