@@ -20,6 +20,7 @@ Package Parts List.
 
 This sensor package uses a WINC1500 shield to connect to the Internet over Wifi.
 It is produced by Adafruit Industries. Here is a [tutorial](https://learn.adafruit.com/adafruit-winc1500-wifi-shield-for-arduino) by them for how to set up and use the board.
+The WINC1500 has an SD card module on it.
 
 ### Adafruit IO
 
