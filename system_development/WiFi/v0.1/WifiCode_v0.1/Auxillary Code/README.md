@@ -1,7 +1,10 @@
 # Auxillary Code
 
-## LTE_Demo
-This was developed by Botletics and can be used with the Botletics board to diagnose connectivity issues with the Botletics shield or SIM card
+### Connect with WPa
 
-## RTC_Set_Time
+This is used with the Wifi shield to test a Wifi connect with WPA (typical) credentials. Use it to see
+whether you Wifi connection and signal strength is good enough to transmit data.
+
+### RTC_Set_Time
+
 This code sets the Real Time Clock to the current time.

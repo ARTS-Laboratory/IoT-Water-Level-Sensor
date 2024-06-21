@@ -5,6 +5,7 @@
 //in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Health and Environmental Control (SCDHEC)
 
 /************************* All Included Libraries - Do not change this section! *********************************/
+//The below three libraries allow the Arduino to connect to the Adafruit IO
 #include "Adafruit_MQTT.h" //Adafruit Arduino MQTT library
 #include "Adafruit_MQTT_Client.h" //Adafruit Arduino MQTT library
 #include <WiFi101.h> //Arduino Wifi library 
@@ -43,11 +44,11 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 // After Publish/Subscribe, the name of the feed is saved as a variable for later use!
 /******************************Feeds for the Adafruit IO***************************************/
 //All Publish paths are for sending data from the Arduino to the Adafruit Server
-Adafruit_MQTT_Publish sonar1 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/");
-Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/");
-Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/");
+Adafruit_MQTT_Publish sonar1 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-1");
+Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-2");
+Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/battery-voltage");
 //Subscribe feeds send data from Adafruit IO to Arduino
-Adafruit_MQTT_Subscribe initialHeight = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/");
+Adafruit_MQTT_Subscribe initialHeight = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/height");
 
 /****************************** Declaring Other Variables ***************************************/
 //Variables for setting up the INA219 power monitoring device
@@ -75,7 +76,7 @@ float height2 = 0; //Same for sensor 2
 
 //Variables for setting up the SD card and RTC
 char timeStamp[32]; //Char/string variable for holding time stamp
-const int chipSelect = 4; //Chip Select for the SD card
+const int chipSelect = 4; //Chip Select for the SD card on the WINC1500 shield
 char dayStampFileName[20]; //Char/string variable for holding the day stamp for naming
 //file in SD card
 RTClib myRTC; //RTC variable for using DS3231 library scripts
@@ -84,7 +85,7 @@ RTClib myRTC; //RTC variable for using DS3231 library scripts
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 2; //time in minutes between between readings
+int delayTime = 10; //time in minutes between between readings
 int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
 //so that subscription commands work properly
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
@@ -197,7 +198,6 @@ void loop() {
     // Serial.print(height2);
 
     // Now publish all the data to different feeds!
-    // The MQTT_publish_checkSuccess handles repetitive stuff.
    if (! sonar1.publish(height1)) {
      Serial.println(F("Failed"));
    }
@@ -249,6 +249,10 @@ void loop() {
     //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
     pingCount = 0; //reset the ping count
+    // Serial.println(busVoltage); //uncomment to debug
+    // Serial.println(height1);
+    // Serial.println(height2);
+    // Serial.println(origHeight);
     delay(1000);
   } 
   //Between sampling times, the Arduino is sent into light sleep which helps to save on power
@@ -257,7 +261,7 @@ void loop() {
   else {
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
     pingCount++; //Add to the pingCount
-    //Serial.println(pingCount); //uncomment to debug
+    // Serial.println(pingCount); //uncomment to debug
     delay(5);
     //The Adafruit IO connection will die every 5 minutes without activity and this
     //prevents the subscription commands from working. The below code pings the Adafruit server
