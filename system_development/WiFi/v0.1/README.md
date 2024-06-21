@@ -63,10 +63,16 @@ Then, you must create feeds so that the key of the feed matches the provided Ard
 <img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20IO%20Feed%20Names.PNG" alt="drawing" width=400"/>
 </p>
 
+Using your Wifi Network name and password, fill in these lines in the code:
+
+<p align="center">
+<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/WifiPasswordArduinoLocation.PNG" alt="drawing" width=600"/>
+</p>
+
 Using your Adafruit username and key, fill in this line in the code:
 
 <p align="center">
-<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/Adafruit%20Arduino%20Key%20Location.PNG" alt="drawing" width=600"/>
+<img src="https://github.com/ARTS-Laboratory/IoT-Water-Level-Sensor/blob/main/media/WifiArduinoKey%20Location.PNG" alt="drawing" width=600"/>
 </p>
 
 Power your device, turn it on, and start transmitting! All relevant schematics are provided for the PCB's, and the Arduino code is annotated with explanations. Feel free to dig into both to tweak the device to your desire.
