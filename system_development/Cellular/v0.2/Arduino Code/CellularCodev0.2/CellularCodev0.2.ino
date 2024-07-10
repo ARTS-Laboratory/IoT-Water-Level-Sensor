@@ -13,11 +13,10 @@
 //The below two libraries work the SD reader as well as the SPI for communicating with the SD card reader
 #include <SPI.h>  //SPI communication library
 #include <SD.h> //SD card library
-//The below three libraries work the INA219 chip, RTC, and the I2C protocol for communicating with them
+//The below libraries work the INA219 chip, RTC, and the I2C protocol for communicating with them
 #include <Wire.h> //library for using I2C communication
 #include <Adafruit_INA219.h> //Adafruit library for controlling INA219 voltage/current sensing chip
 #include <DS3231.h> //library for RTC module
-//******************
 #include <LowPower.h> //library for using the sleep mode watchdog timer
 #include "NewPing.h" //New Ping library for use with the sonar sensors
 
@@ -41,7 +40,6 @@ SoftwareSerial *modemSerial = &modemSS;
 // Notice how we don't include the reset pin because it's reserved for emergencies on the LTE module!
 Adafruit_FONA_LTE modem = Adafruit_FONA_LTE();
 
-
 /************************* Adafruit.io Setup - Enter your username and password for Adafruit IO here *********************************/
 #define AIO_SERVER      "io.adafruit.com" //Adafruit IO server information
 #define AIO_SERVERPORT  1883 //Adafruit IO server information
@@ -62,17 +60,18 @@ uint8_t txfailures = 0;
 Adafruit_MQTT_Publish sonar1 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-1");
 Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-2");
 Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/battery-voltage");
-//Subscribe feeds send data from Adafruit IO to Arduino
-Adafruit_MQTT_Subscribe initialHeight = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/height");
+Adafruit_MQTT_Publish internalTemperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temperature");
+Adafruit_MQTT_Publish signalStrength = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/signal-strength");
+
 /****************************** Declaring Other Variables ***************************************/
 //random variables for running Botletics scripts, do not edit
 uint8_t readline(char *buff, uint8_t maxbuff, uint16_t timeout = 0);
 char imei[16] = {0}; // Use this for device ID
 uint8_t type;
 
-// Char/String variables for holding the battery and height variables
+// Char/String variables for holding the variables
 //for transmitting to Adafruit IO
-char battBuff[12],dist1Buff[12],dist2Buff[12];
+char battBuff[12],dist1Buff[12],dist2Buff[12],tempBuff[12],signalBuff[12];
 
 //Variables for setting up the INA219 power monitoring device
 Adafruit_INA219 ina219; //declares the INA219 variable, do not edit
@@ -88,11 +87,8 @@ NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable f
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
 float distance1=0; //variable for distance measured by sonar sensor 1
 float distance2=0; //variable for distance measured by sonar sensor 2
-float origDist1=0; //Original distance for sensor 1 that is used to calibrate the height measurement of the water
-float origDist2=0; //Same as above for sensor 2
-float origHeight = 0; //Elevation of water at set up, used
+float origHeight = 0; //Elevation of the ultrasonic sensor at set up, used
 //to calibrate the sensor readings (usually done in reference to sea level)
-//This defaults to 0, but is actually set up in the Adafruit IO dashboard
 float height1 = 0; //Height variable for the current water height calculated from ultrasonic sensor 1
 //(usually done with reference to sea level)
 float height2 = 0; //Same for sensor 2
@@ -102,16 +98,16 @@ char timeStamp[32]; //Char/string variable for holding time stamp
 const int chipSelect = 53; //Chip Select for the SD card
 char dayStampFileName[20]; //Char/string variable for holding the day stamp for naming
 //file in SD card
-RTClib myRTC; //RTC variable for using DS3231 library scripts
+DS3231 myRTC; //RTC variable for using DS3231 library scripts
 
 //Variables governing the sampling rate of the sensor
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 2; //time in minutes between between readings
-int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
-//so that subscription commands work properly
+int delayTime = 10; //time in minutes between between readings
+
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
+void(* resetFunc) (void) = 0; //declare a reset function to reboot the Arduino if it freezes
 
 //*******************************Void Set up************************************
 void setup() {
@@ -120,20 +116,22 @@ void setup() {
 
   //The below section activates the SD card
   Serial.print("Initializing SD card...");
-
   // see if the card is present and can be initialized:
   while (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present. Retrying...");
     delay(2000);
+    resetFunc(); //reboots the Arduino in case of failure, used multiple times
+    //in the code to prevent "bricking" when the sensor is deployed in
+    //out of the way places
   }
   Serial.println("card initialized.");
 
   //These following lines start up and calibrate the INA219 chip
-   while (!ina219.begin()) { //these lines initialize the INA219 chip
-    Serial.println("Failed to find INA219 chip. Retrying...");
+  while (!ina219.begin()) { //these lines initialize the INA219 chip
+    //Serial.println("Failed to find INA219 chip. Retrying...");
     delay(2000);
+    resetFunc();
   }
-
   // To use a slightly lower 32V, 1A range (higher precision on amps):
   //ina219.setCalibration_32V_1A();
   // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
@@ -144,19 +142,22 @@ void setup() {
   pinMode(RST, OUTPUT);
   digitalWrite(RST, HIGH); // Default state
   //The following lines are for powering on and starting up 
-    //the SIM7000 Botletics shield
-    modem.powerOn(BOTLETICS_PWRKEY); // Power on the module
-    moduleSetup(); // Establishes first-time serial comm and prints IMEI
-    // Set modem to full functionality
-    modem.setFunctionality(1); // AT+CFUN=1
-    modem.setNetworkSettings(F("hologram")); // For Hologram SIM card
+  //the SIM7000 Botletics shield
+  modem.powerOn(BOTLETICS_PWRKEY); // Power on the module
+  moduleSetup(); // Establishes first-time serial comm and prints IMEI
+  // Set modem to full functionality
+  modem.setFunctionality(1); // AT+CFUN=1
+  modem.setNetworkSettings(F("hologram")); // For Hologram SIM card
     #if !defined(SIMCOM_3G) && !defined(SIMCOM_7500) && !defined(SIMCOM_7600)
       // Disable data just to make sure it was actually off so that we can turn it on
-      if (!modem.enableGPRS(false)) Serial.println(F("Failed to disable data!"));
+      if (!modem.enableGPRS(false)) //Serial.println(F("Failed to disable data!"));
       // Turn on data
       while (!modem.enableGPRS(true)) {
-        Serial.println(F("Failed to enable data, retrying..."));
-        delay(2000); // Retry every 2s
+        //Serial.println(F("Failed to enable data, retrying..."));
+        delay(2000);
+        modem.powerDown();
+        delay(10000);
+        resetFunc();
       }
       Serial.println(F("Enabled data!"));
     #endif
@@ -167,14 +168,20 @@ void setup() {
     // If unsuccessful, keep retrying every 2s until a connection is made
     while (!netStatus()) {
       Serial.println(F("Failed to connect to cell network, retrying..."));
-      delay(2000); // Retry every 2s
+      delay(2000);
+      modem.powerDown();
+      delay(10000);
+      resetFunc();
     }
     Serial.println(F("Connected to cell network!"));
     // Open wireless connection if not already activated
     if (!modem.wirelessConnStatus()) {
       while (!modem.openWirelessConnection(true)) {
         Serial.println(F("Failed to enable connection, retrying..."));
-        delay(2000); // Retry every 2s
+        delay(2000); 
+        modem.powerDown();
+        delay(10000);
+        resetFunc();      
       }
       Serial.println(F("Enabled data!"));
     }
@@ -182,17 +189,14 @@ void setup() {
       Serial.println(F("Data already enabled!"));
     }
     Serial.println(F("---------------------"));
-    delay(1000);
 
     //These lines set up the ability to subscribe from the Adafruit IO Dashboard
-    mqtt.subscribe(&initialHeight);
-    delay(1000);
+    //mqtt.subscribe(&initialHeight);
     MQTT_connect(); //This connects our sensor package to the Adafruit IO
-    delay(1000);
 }
 
 void loop() {
-  DateTime now = myRTC.now(); //creates the "now" variable from the RTC to save the timeStamp
+  DateTime now = RTClib::now();; //creates the "now" variable from the RTC to save the timeStamp
   currentTime = now.minute(); //saves the current minute as a variable
 
   //This "if" loop contains all of the code to run the package on loop. The sampling rate set in the Adafruit Dashboard gives the
@@ -203,69 +207,33 @@ void loop() {
     //the above line creates a timestamp that is used to date data saved to the SD card
     snprintf(dayStampFileName, 20, "%02d%02d%02d.txt", now.day(), now.month(), now.year());  
     //the above line creates a name for the SD card files so that a new file is created every new day
-    //Serial.print(F("Date/Time: ")); //uncomment to debug
-    //Serial.println(timeStamp);
+    Serial.print(F("Date/Time: ")); //uncomment to debug
+    Serial.println(timeStamp);
+
+    //This line retrieves temperature in Celcius from the RTC
+    float rtcTemp = myRTC.getTemperature();
+    float tempF = rtcTemp*(1.8)+32; //convert celcius to farenheit
+    Serial.println(tempF);
 
     //This line gets the voltage of the battery from the INA219 chip
     busVoltage = ina219.getBusVoltage_V()+0.8; //get voltage from battery and add 0.8V to account for drop across diode
-
-    //This section connects the device to Adafruit IO and publishes the variables
-    // Ensure the connection to the MQTT server is alive (this will make the first
-    // connection and automatically reconnect when disconnected). See the MQTT_connect
-    // function definition further below.
-    MQTT_connect();
-    //subscription packet subloop, this runs and waits for the toggle switch in Adafruit IO to turn on
-    Adafruit_MQTT_Subscribe *subscription;
-    while ((subscription = mqtt.readSubscription(5000))) {
-      if (subscription == &initialHeight) {
-        Serial.print(F("*** Initial water elevation is now: "));
-        Serial.println((char *)initialHeight.lastread);
-        delay(100);
-        origHeight = atof((char *)initialHeight.lastread);
-        //These two lines ping the sonar sensors when the height is changed
-        //to calibrate them with an original distance between them and the water surface
-        origDist1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //ping_median 
-        //takes 5 quick readings with the sonar sensor and takes the median from this
-        //data set in order to eliminate misreads, then convert_in converts the ping_median
-        //which is in milliseconds into inches according to the speed of sound
-        delay(1000); //This second delay prevents the sensors from
-        //interfering with each other
-        origDist2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above
-        delay(1000);
-        //Serial.println("Original Distances are: "); uncomment to debug
-        // Serial.print(origDist1);
-        // Serial.print(" ");
-        // Serial.println(origDist2);
-      }
-    delay(2000);
-    }
-
+    
     //This section gets the current distance from the sonar sensors and calculates
-    //the current height based on the the original distance of the sonar sensor and original height of the water
-    // h = h0 + (d0-d), and converts the reading to ft
-    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //same as above
+    //the current height based on the elevation of sensor minus the distance
+    // h = h0 - d, and converts the reading to ft
+    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //The median function gives the median value of five quick samples
     delay(1000); //This second delay keeps the sensors from interfering with each other
-    distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
-    height1 = origHeight + (origDist1 - distance1)/(12); //convert from inches to feet
-    height2 = origHeight + (origDist2 - distance2)/(12);
+    distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above for sensor 2
+    height1 = origHeight - (distance1)/(12); //convert from inches to feet
+    height2 = origHeight - (distance2)/(12);
+    Serial.print("Height 1 is: "); //uncomment to debug
+    Serial.print(height1);
+    Serial.print("  Height 2 is: ");
+    Serial.println(height2);
 
-    // Serial.print("Height 1 is: "); //uncomment to debug
-    // Serial.print(height1);
-    // Serial.print("  Height 2 is: ");
-    // Serial.print(height2);
-
-    //This creates string variables from numbers for transmission to Adafruit IO
-    dtostrf(height1, 1, 2, dist1Buff);
-    dtostrf(height2, 1, 2, dist2Buff);
-    dtostrf(busVoltage, 1, 2, battBuff);
-
-    // Now publish all the data to different feeds!
-    // The MQTT_publish_checkSuccess handles repetitive stuff.
-    MQTT_publish_checkSuccess(sonar1, dist1Buff);
-    MQTT_publish_checkSuccess(sonar2, dist2Buff);
-    MQTT_publish_checkSuccess(batteryVoltage, battBuff);
-
-    // This section saves the data to the SD card
+// This section saves the data to the SD card, before we attempt to transmit the data over the cell network
+//Because the cell connection crashes frequently, we save the data to the SD card first so that we can have
+//a more complete set of data for future investigation
     Serial.println(dayStampFileName);
     //This line creates a new file named with the day time stamp (DDMMYYYY)
     //or opens the file if this name already exists
@@ -275,15 +243,15 @@ void loop() {
     if (SD.exists(dayStampFileName) == 0) {
       File dataFile = SD.open(dayStampFileName, FILE_WRITE);
       if (dataFile){
-        dataFile.println("Ultrasonic 1 Height Reading (ft), Ultrasonic 2 Height Reading (ft), Battery Voltage (V), Timestamp");
+        dataFile.println("Ultrasonic 1 Height Reading (ft), Ultrasonic 2 Height Reading (ft), Battery Voltage (V), Internal Temperature (F), Timestamp");
         dataFile.close();
       }
       else {
       Serial.println("error opening datalog.txt");
       }
     }
-    //The below section creates a new entry in SD card which records all the relevant
-    //information and the timestamp in a CSV format
+    // The below section creates a new entry in SD card which records all the relevant
+    // information and the timestamp in a CSV format
     File dataFile = SD.open(dayStampFileName, FILE_WRITE);
     if (dataFile) {
         dataFile.print(height1);
@@ -291,6 +259,8 @@ void loop() {
         dataFile.print(height2);
         dataFile.print(",");
         dataFile.print(busVoltage);
+        dataFile.print(",");
+        dataFile.print(tempF);
         dataFile.print(",");
         dataFile.println(timeStamp);
         dataFile.close();
@@ -300,33 +270,54 @@ void loop() {
       Serial.println("error opening datalog.txt");
     }
 
+    //This creates string variables from numbers for transmission to Adafruit IO
+    dtostrf(height1, 1, 2, dist1Buff);
+    dtostrf(height2, 1, 2, dist2Buff);
+    dtostrf(busVoltage, 1, 2, battBuff);
+    dtostrf(tempF, 1, 2, tempBuff);
+
+    //This section gauges the signal strength of the cellular connection
+    // Read the raw RSSI value
+    uint8_t n = modem.getRSSI();
+    int8_t r;
+    Serial.print(F("RSSI = ")); Serial.print(n); Serial.print(": ");
+    // Convert raw RSSI to dBm
+    if (n == 0) r = -115;
+    if (n == 1) r = -111;
+    if (n == 31) r = -52;
+    if ((n >= 2) && (n <= 30)) {
+      r = map(n, 2, 30, -110, -54);
+    }
+    Serial.print(r); Serial.println(F(" dBm"));
+    dtostrf(r, 1, 2, signalBuff); //This saves the signal strength in dBm to a string for transmission
+
+    //This section connects the device to Adafruit IO and publishes the variables
+    // Ensure the connection to the MQTT server is alive (this will make the first
+    // connection and automatically reconnect when disconnected). See the MQTT_connect
+    // function definition further below.
+    MQTT_connect();
+
+    // Now publish all the data to different feeds!
+    // The MQTT_publish_checkSuccess handles repetitive stuff.
+    MQTT_publish_checkSuccess(sonar1, dist1Buff);
+    MQTT_publish_checkSuccess(sonar2, dist2Buff);
+    MQTT_publish_checkSuccess(batteryVoltage, battBuff);
+    MQTT_publish_checkSuccess(internalTemperature, tempBuff);
+    MQTT_publish_checkSuccess(signalStrength, signalBuff);
   // Delay until next post
     lastTime = currentTime; //This prevents the "if" loop from running again and again
     //in the same minute
 
     //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
-    pingCount = 0; //reset the ping count
-    delay(1000);
+    //pingCount = 0; //reset the ping count
   } 
   //Between sampling times, the Arduino is sent into light sleep which helps to save on power
-  //It wakes up every eight seconds to check the time and goes back to sleep unless the sampling rate
+  //It wakes up every 4 seconds to check the time and goes back to sleep unless the sampling rate
   //conditions are met in the "if" loop
   else {
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-    pingCount++; //Add to the pingCount
-    //Serial.println(pingCount); //uncomment to debug
+    LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
     delay(5);
-    //The Adafruit IO connection will die every 5 minutes without activity and this
-    //prevents the subscription commands from working. The below code pings the Adafruit server
-    //every minute to keep the connection alive in case the sampling rate is greater than 5 minutes
-    if (pingCount == 10){
-      if(! mqtt.ping()) {
-      mqtt.disconnect();
-      }
-      delay(1000);
-      pingCount = 0; //reset the ping counter
-    }
   }
 }  
 
@@ -348,7 +339,9 @@ void moduleSetup() {
   modemSS.begin(9600);
   if (! modem.begin(modemSS)) {
     Serial.println(F("Couldn't find modem"));
-    while (1); // Don't proceed if it couldn't find the device
+    modem.powerDown();
+    delay(10000);
+    resetFunc();    
   }
 
   type = modem.type();
@@ -415,10 +408,9 @@ void MQTT_connect() {
   Serial.println("Connecting to MQTT... ");
 
   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-    Serial.println(mqtt.connectErrorString(ret));
-    Serial.println("Retrying MQTT connection in 5 seconds...");
-    mqtt.disconnect();
-    delay(6000);  // wait 6 seconds
+      modem.powerDown();
+      delay(10000);
+      resetFunc();
   }
   Serial.println("MQTT Connected!");
 }
@@ -426,9 +418,8 @@ void MQTT_connect() {
 //This function publishes data to the Adafruit IO server
 void MQTT_publish_checkSuccess(Adafruit_MQTT_Publish &feed, const char *feedContent) {
   Serial.println(F("Sending data..."));
-  if (! feed.publish(feedContent)) {
+   if (!feed.publish(feedContent)) {
     Serial.println(F("Failed"));
-    txfailures++;
   }
   else {
     Serial.println(F("OK!"));
