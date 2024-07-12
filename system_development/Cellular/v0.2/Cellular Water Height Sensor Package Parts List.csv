@@ -1,6 +1,6 @@
 Material Ordering List,,,,,
 Part Name,,,,,
-Power Board PCB,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,Price per unit (5/14/2024)
+Power Board PCBv0.2,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,Price per unit (5/14/2024)
 Barrell Jack,PJ-102B,CP-102B-ND,CUI Devices,J1,$0.65
 Slide Switch,AS11AP,360-3719-ND,NKK Switches,SW1,$4.07
 Diode SMD,DDZ16-7,31-DDZ16-7TR-ND,Diodes Incorporated,D1,$0.25
@@ -14,9 +14,10 @@ Capacitor SMD,CL31A226KAHNNNE,1276-3047-2-ND,Samsung Electro-Mechanics,C3,$0.36
 Resistor SMD,RC1206FR-07510RL,311-510FRTR-ND,YAGEO,R2,$0.10
 Power Board PCB,Custom,Custom,OSH Park,N/A,
 ,,,,,
-Datalogging Board,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,
-3.3 V Linear Regulator,TC2014-3.3VCTTR,TC2014-3.3VCTTR-ND,Microchip Technology,U1,$0.49
-Capacitor SMD,CL31B105KBHNNNE,1276-1068-2-ND,Samsung Electro-Mechanics,C1 / C2,$0.10
+Datalogging Boardv0.21,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,
+3.3 V Linear Regulator,UA78M33IKVURG3,296-41035-2-ND,Texas Instruments,U1,$0.83
+Capacitor SMD,CL31B104KBCNNNC,1276-1017-2-ND,Samsung Electro-Mechanics,C1,$0.11
+Capacitor SMD,CL31B334KBFNNNE,1276-1138-2-ND,Samsung Electro-Mechanics,C2,$0.13
 SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,$4.99 (for 12)
 Real Time Clock Module,B09KPC8JZQ,ASIN (Amazon),AITRIP,RT1,$7.99 (for 3)
 Ultrasonic Sensor,B0C73XZRFQ,ASIN (Amazon),Shutao,US1 / US2,$21.99 (for 5)

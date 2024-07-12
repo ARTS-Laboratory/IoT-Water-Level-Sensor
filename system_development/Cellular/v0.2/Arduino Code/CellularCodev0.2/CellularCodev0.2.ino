@@ -74,7 +74,7 @@ uint8_t type;
 char battBuff[12],dist1Buff[12],dist2Buff[12],tempBuff[12],signalBuff[12];
 
 //Variables for setting up the INA219 power monitoring device
-Adafruit_INA219 ina219; //declares the INA219 variable, do not edit
+Adafruit_INA219 ina219(0x42); //declares the INA219 variable, do not edit
 float busVoltage = 0; //the voltage reading on the battery input from INA219
 
 //Variables for setting up the two ultrasonic sensors
@@ -128,13 +128,13 @@ void setup() {
 
   //These following lines start up and calibrate the INA219 chip
   while (!ina219.begin()) { //these lines initialize the INA219 chip
-    //Serial.println("Failed to find INA219 chip. Retrying...");
+    Serial.println("Failed to find INA219 chip. Retrying...");
     delay(2000);
     resetFunc();
   }
-  // To use a slightly lower 32V, 1A range (higher precision on amps):
+  //To use a slightly lower 32V, 1A range (higher precision on amps):
   //ina219.setCalibration_32V_1A();
-  // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
+  //Or to use a lower 16V, 400mA range (higher precision on volts and amps):
   ina219.setCalibration_16V_400mA();
 
   //The below section powers on and sets up the SIM7000 chip so that the
@@ -217,7 +217,7 @@ void loop() {
 
     //This line gets the voltage of the battery from the INA219 chip
     busVoltage = ina219.getBusVoltage_V()+0.8; //get voltage from battery and add 0.8V to account for drop across diode
-    
+    Serial.println(busVoltage);
     //This section gets the current distance from the sonar sensors and calculates
     //the current height based on the elevation of sensor minus the distance
     // h = h0 - d, and converts the reading to ft
@@ -317,7 +317,7 @@ void loop() {
   //conditions are met in the "if" loop
   else {
     LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
-    delay(5);
+     delay(5);
   }
 }  
 

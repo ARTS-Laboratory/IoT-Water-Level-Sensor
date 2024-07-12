@@ -12,6 +12,7 @@ issues with other versions of these libraries, so it is important that all are m
 in the Arduino libraries folder.
 
 ## Auxillary Code
-This contains two helpful Arduino codes, one to the set the time on an RTC in order to calibrate it. 
+This contains three helpful Arduino codes. One sets the time on an RTC in order to calibrate it. 
 The other is a demo code which can also be found in the Botletics folder in the Special Arduino Libraries folder.
-The LTE Demo is useful to troubleshoot connectivity issues with the SIM card.
+The LTE Demo is useful to troubleshoot connectivity issues with the SIM card. The last is an I2C address finder which
+can be used to find the I2C address of the INA219 current measuring chip.

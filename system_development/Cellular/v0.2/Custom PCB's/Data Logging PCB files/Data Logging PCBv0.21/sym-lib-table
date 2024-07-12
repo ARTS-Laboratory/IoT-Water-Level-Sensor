@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "RTC Breakout Module")(type "KiCad")(uri "${KIPRJMOD}/RTC Breakout Module.kicad_sym")(options "")(descr ""))
+)
