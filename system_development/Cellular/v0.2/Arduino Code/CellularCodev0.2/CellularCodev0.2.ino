@@ -74,7 +74,7 @@ uint8_t type;
 char battBuff[12],dist1Buff[12],dist2Buff[12],tempBuff[12],signalBuff[12];
 
 //Variables for setting up the INA219 power monitoring device
-Adafruit_INA219 ina219(0x42); //declares the INA219 variable, do not edit
+Adafruit_INA219 ina219(0x40); //declares the INA219 variable, do not edit
 float busVoltage = 0; //the voltage reading on the battery input from INA219
 
 //Variables for setting up the two ultrasonic sensors
@@ -127,8 +127,8 @@ void setup() {
   Serial.println("card initialized.");
 
   //These following lines start up and calibrate the INA219 chip
-  while (!ina219.begin()) { //these lines initialize the INA219 chip
-    Serial.println("Failed to find INA219 chip. Retrying...");
+  if (!ina219.begin()) { //these lines initialize the INA219 chip
+    Serial.println("Failed to find INA219 chip...");
     delay(2000);
     resetFunc();
   }

@@ -1638,6 +1638,31 @@
     )
   )
 
+  (symbol (lib_id "power:GND") (at 138.43 73.66 90) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 65821757-3681-4939-bb52-2e593e258bc9)
+    (property "Reference" "#PWR013" (at 144.78 73.66 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND" (at 142.24 73.66 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 138.43 73.66 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 138.43 73.66 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid b9e0fe05-c472-4ca2-aa33-3041962569ec))
+    (instances
+      (project "Power PCB"
+        (path "/0c11686e-c259-4117-be1e-3cec8c3ad7b5"
+          (reference "#PWR013") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:GND") (at 132.08 124.46 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 6705a97c-3784-4d7d-8fde-b2d064d2d001)
@@ -1812,6 +1837,31 @@
       (project "Power PCB"
         (path "/0c11686e-c259-4117-be1e-3cec8c3ad7b5"
           (reference "#PWR012") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:GND") (at 138.43 71.12 90) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 9dac3696-35b0-43e5-934f-942ffb001efc)
+    (property "Reference" "#PWR03" (at 144.78 71.12 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND" (at 142.24 71.12 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 138.43 71.12 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 138.43 71.12 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid ce008c9c-6202-4bad-9e9e-61dcec229b4e))
+    (instances
+      (project "Power PCB"
+        (path "/0c11686e-c259-4117-be1e-3cec8c3ad7b5"
+          (reference "#PWR03") (unit 1)
         )
       )
     )
