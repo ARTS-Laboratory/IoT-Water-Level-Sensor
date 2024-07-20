@@ -34,7 +34,7 @@ Our package can connect to the Adafruit online server. A free account can be mad
 This device can connect to Internet via cellular or Wifi.
 <p align="left">
 <img src="media/Cellular Board.png" alt="drawing" width="300"/>
-<p align="right">
+<align="right">
 <img src="media/Wifi Board.png" alt="drawing" width="300"/>
 </p>
 On the left, the SIM7000 cellular shield. On the right, the WINC1500 Wifi shield.
