@@ -1,11 +1,9 @@
 # Systems Variations  
-Variations of the IoT water height sensor
+The IOT water height sensor comes in two main categories: Cellular and Wifi.
+<p>
+Select whichever method you would like to use to connect your water height sensor to the Internet. Each varation comes with the complete files needed to find parts, assemble the package, and program the Arduino.
+</p>
 
-## Celluar
-* Sensing system designed with celluar data transfer
-
-## WiFi
-* Sensing system designed with Wifi data transfer
 
 
 

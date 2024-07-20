@@ -1,6 +1,6 @@
 # Celluar V0.2
 
-### Arduino
+### Arduino Code
 This folder contains all of the Arduino code used in this sensor project, including special custom formatted libraries that you will have to install in order to make the Arduino code work properly on your hardware.
 
 ### Custom PCB's
