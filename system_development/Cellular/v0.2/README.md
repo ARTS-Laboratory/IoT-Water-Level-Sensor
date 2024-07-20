@@ -32,7 +32,7 @@ You will also need to learn how to use [feeds](https://learn.adafruit.com/adafru
 
 ### PCB's
 
-To use this sensor, you will have to assemble custom PCB's. All the schematics can be found in the Datalogging and Power PCB folders and parts list. 
+To use this sensor, you will have to assemble custom PCB's. The PCB's were designed using the [KiCad](https://www.kicad.org/) software, a free-to-use PCB editor. All the schematics can be found in the Datalogging and Power PCB folders under the file name .kicad_sch. The provided parts list references the .kicad_sch files so that you can know how to assemble the PCB on your own. Datasheets for each part can also be found within the .kicad_sch file.
 We have ordered PCB's from [OSH Park](https://oshpark.com/) and have liked the results. Simply drag and drop the .kicad_pcb file from the PCB folder into OSH Park to create a PCB!
 
 # Assembly Instructions
