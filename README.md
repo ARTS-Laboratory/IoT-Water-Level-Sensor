@@ -1,21 +1,41 @@
-# IoT-Water-Level-Sensor
-IoT Water Level Sensor
+# IoT Water Level Sensor
 
-
-This is a stage sensor developed by the ARTS-Lab at the University of South Carolina and interns at the South Carolina Department of Health and Environmental Control (SC DHEC) Dam Safety Program. The purpose of this sensor is to provide a low-cost, open-source alternative to traditional gaging equipment. 
+This is a water height sensor developed by the ARTS-Lab at the University of South Carolina in conjunction with the South Carolina Department of Environmental Services (SC DES) Dam Safety Program. The purpose of this sensor is to provide a low-cost, open-source alternative to traditional gaging equipment. 
 
 <p align="center">
 <img src="media/Lake Wallace Installation 2.png" alt="drawing" width="600"/>
 </p>
 <p align="center">
-Figure 1: Sensor deployed above inlet to Lake Wallace in Bennetsville, SC.
+Sensor deployed above inlet to Lake Wallace in Bennetsville, SC.
 </p>
 
 <p align="center">
-<img src="media/Adafruit GUI.png.png" alt="drawing" width="600"/>
+<img src="media/Adafruit GUI.png" alt="drawing" width="600"/>
 </p>
 <p align="center">
-Figure 2: The online GUI using Adafruit that displays water elevation in real time.
+The online GUI using Adafruit that displays water elevation in real time.
+</p>
+
+## Features
+### Water Elevation Measurement
+The sensor package uses two ultrasonic sensors to measurement the height of water in a reservoir, lake, or pond. These sensors are low cost, but are accurate to +/- 1 inch within a range of 18 ft.
+<p align="center">
+<img src="media/Ultrasonic Sensor.png" alt="drawing" width="400"/>
+</p>
+<p align="center">
+The low cost, JSN-SR04T ultrasonic sensor used with Arduinos.
+</p>
+
+### Internet Connectivity
+Our package can connect to the Adafruit online server. A free account can be made with them to host data online, and a small subscription fee can upgrade the service for more data storage.
+</p>
+This device can connect to Internet via cellular or Wifi.
+<p align="left">
+<img src="media/Cellular Board.png" alt="drawing" width="400"/>
+<p align="right">
+<img src="media/Wifi Board.png" alt="drawing" width="400"/>
+</p>
+On the left, the SIM7000 cellular shield. On the right, the WINC1500 Wifi shield.
 </p>
 
 ## System Development
