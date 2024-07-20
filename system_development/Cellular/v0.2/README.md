@@ -1,14 +1,14 @@
 # Celluar V0.2
 
-## CellularCodev0.2
-This folder contains all of the Arduino code used in this sensor project.
+### Arduino
+This folder contains all of the Arduino code used in this sensor project, including special custom formatted libraries that you will have to install in order to make the Arduino code work properly on your hardware.
 
-## Custom PCB's
-This folder contains the KiCad files used to create the custom data logging PCB and power management PCB
+### Custom PCB's
+This folder contains the KiCad files used to create the custom data logging PCB and power management PCB.
 
-## Parts List
-A detailed parts list with part numbers and ordering information can be found in the Cellular Water Height Sensor
-Package Parts List.
+### Parts List
+A detailed parts list with part numbers and ordering information. This list gives the location and price of where we ordered every part to assemble both the package and the individual PCB's.
+The parts used in the PCB's have their identification number from the schematics included so that you will be able to see where each part goes when assembling the PCB's.
 
 # Important Information:
 
