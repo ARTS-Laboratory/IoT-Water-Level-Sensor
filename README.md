@@ -40,6 +40,9 @@ This device can connect to Internet via cellular or Wifi.
 On the left, the SIM7000 cellular shield. On the right, the WINC1500 Wifi shield.
 </p>
 
+### Long Term Data Storage
+Because the online server only saves data for 60 days, to ensure that all data is recorded for future use, we use an SD card and Real Time clock with this sensor package to save all data with a timestamp in a .CSV format. 
+
 ## System Development
 Contains the hardware and software developed for the project. Use this folder to create and troubleshoot a sensor.
 
