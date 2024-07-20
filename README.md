@@ -8,6 +8,8 @@ This is a water height sensor developed by the ARTS-Lab at the University of Sou
 <p align="center">
 Sensor deployed above inlet to Lake Wallace in Bennetsville, SC.
 </p>
+<p>
+</p>
 
 <p align="center">
 <img src="media/Adafruit GUI.png" alt="drawing" width="600"/>
@@ -31,9 +33,9 @@ Our package can connect to the Adafruit online server. A free account can be mad
 </p>
 This device can connect to Internet via cellular or Wifi.
 <p align="left">
-<img src="media/Cellular Board.png" alt="drawing" width="400"/>
+<img src="media/Cellular Board.png" alt="drawing" width="300"/>
 <p align="right">
-<img src="media/Wifi Board.png" alt="drawing" width="400"/>
+<img src="media/Wifi Board.png" alt="drawing" width="300"/>
 </p>
 On the left, the SIM7000 cellular shield. On the right, the WINC1500 Wifi shield.
 </p>
