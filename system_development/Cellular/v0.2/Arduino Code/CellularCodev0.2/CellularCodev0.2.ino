@@ -62,7 +62,9 @@ Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds
 Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/battery-voltage");
 Adafruit_MQTT_Publish internalTemperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temperature");
 Adafruit_MQTT_Publish signalStrength = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/signal-strength");
-
+//All Subscribe paths are for sending data from the Adafruit server to the Arduino
+Adafruit_MQTT_Subscribe initialHeight1 = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/initial-height-1");
+Adafruit_MQTT_Subscribe initialHeight2 = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/initial-height-2");
 /****************************** Declaring Other Variables ***************************************/
 //random variables for running Botletics scripts, do not edit
 uint8_t readline(char *buff, uint8_t maxbuff, uint16_t timeout = 0);
@@ -87,7 +89,9 @@ NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable f
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
 float distance1=0; //variable for distance measured by sonar sensor 1
 float distance2=0; //variable for distance measured by sonar sensor 2
-float origHeight = 0; //Elevation of the ultrasonic sensor at set up, used
+float initHght1 = 0; //Elevation of the ultrasonic sensor 1 at set up, used
+//to calibrate the sensor readings (usually done in reference to sea level)
+float initHght2 = 0; //Elevation of the ultrasonic sensor 1 at set up, used
 //to calibrate the sensor readings (usually done in reference to sea level)
 float height1 = 0; //Height variable for the current water height calculated from ultrasonic sensor 1
 //(usually done with reference to sea level)
@@ -104,10 +108,10 @@ DS3231 myRTC; //RTC variable for using DS3231 library scripts
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 10; //time in minutes between between readings
+int delayTime = 4; //time in minutes between between readings
 
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
-void(* resetFunc) (void) = 0; //declare a reset function to reboot the Arduino if it freezes
+bool firstRun = true;
 
 //*******************************Void Set up************************************
 void setup() {
@@ -120,17 +124,12 @@ void setup() {
   while (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present. Retrying...");
     delay(2000);
-    resetFunc(); //reboots the Arduino in case of failure, used multiple times
-    //in the code to prevent "bricking" when the sensor is deployed in
-    //out of the way places
   }
   Serial.println("card initialized.");
 
   //These following lines start up and calibrate the INA219 chip
   if (!ina219.begin()) { //these lines initialize the INA219 chip
     Serial.println("Failed to find INA219 chip...");
-    delay(2000);
-    resetFunc();
   }
   //To use a slightly lower 32V, 1A range (higher precision on amps):
   //ina219.setCalibration_32V_1A();
@@ -141,67 +140,47 @@ void setup() {
   //package can connect to the cellular network
   pinMode(RST, OUTPUT);
   digitalWrite(RST, HIGH); // Default state
-  //The following lines are for powering on and starting up 
-  //the SIM7000 Botletics shield
-  modem.powerOn(BOTLETICS_PWRKEY); // Power on the module
-  moduleSetup(); // Establishes first-time serial comm and prints IMEI
-  // Set modem to full functionality
-  modem.setFunctionality(1); // AT+CFUN=1
-  modem.setNetworkSettings(F("hologram")); // For Hologram SIM card
-    #if !defined(SIMCOM_3G) && !defined(SIMCOM_7500) && !defined(SIMCOM_7600)
-      // Disable data just to make sure it was actually off so that we can turn it on
-      if (!modem.enableGPRS(false)) //Serial.println(F("Failed to disable data!"));
-      // Turn on data
-      while (!modem.enableGPRS(true)) {
-        //Serial.println(F("Failed to enable data, retrying..."));
-        delay(2000);
-        modem.powerDown();
-        delay(10000);
-        resetFunc();
-      }
-      Serial.println(F("Enabled data!"));
-    #endif
-      
-    //The following section connects the SIM card to the cellular network and enables data
-    //so we can transmit to Adafruit IO
-    // Connect to cell network and verify connection
-    // If unsuccessful, keep retrying every 2s until a connection is made
-    while (!netStatus()) {
-      Serial.println(F("Failed to connect to cell network, retrying..."));
-      delay(2000);
-      modem.powerDown();
-      delay(10000);
-      resetFunc();
-    }
-    Serial.println(F("Connected to cell network!"));
-    // Open wireless connection if not already activated
-    if (!modem.wirelessConnStatus()) {
-      while (!modem.openWirelessConnection(true)) {
-        Serial.println(F("Failed to enable connection, retrying..."));
-        delay(2000); 
-        modem.powerDown();
-        delay(10000);
-        resetFunc();      
-      }
-      Serial.println(F("Enabled data!"));
-    }
-    else {
-      Serial.println(F("Data already enabled!"));
-    }
-    Serial.println(F("---------------------"));
-
-    //These lines set up the ability to subscribe from the Adafruit IO Dashboard
-    //mqtt.subscribe(&initialHeight);
-    MQTT_connect(); //This connects our sensor package to the Adafruit IO
+  //This function is declared below and powers on the Botletics shield
+  BotleticsSetup();
+  //These lines set up the ability to subscribe from the Adafruit IO Dashboard
+  mqtt.subscribe(&initialHeight1);
+  mqtt.subscribe(&initialHeight2);
+  MQTT_connect(); //This connects our sensor package to the Adafruit IO
 }
 
 void loop() {
+  Serial.println("The loop begins here!");
+  //This if statement will not allow the program to proceed until the Initial Height for both ultrasonic sensors have been
+  //entered from the Adafruit IO
+  while (initHght1 == 0 || initHght2 == 0){
+      // This is our 'wait for incoming subscription packets' busy subloop
+    Adafruit_MQTT_Subscribe *subscription;
+    while ((subscription = mqtt.readSubscription(5000))) {
+      if (subscription == &initialHeight1) {
+        Serial.print(F("*** Got: "));
+        Serial.println((char *)initialHeight1.lastread);
+        initHght1 = atof((char *)initialHeight1.lastread);
+      }
+      if (subscription == &initialHeight2) {
+        Serial.print(F("*** Got: "));
+        Serial.println((char *)initialHeight2.lastread);
+        initHght2 = atof((char *)initialHeight2.lastread);
+      }
+    }
+    Serial.println(initHght1);
+    Serial.println(initHght2);
+    Serial.println("You have not entered the initial heights yet!");
+    delay(2000);
+    }
   DateTime now = RTClib::now();; //creates the "now" variable from the RTC to save the timeStamp
   currentTime = now.minute(); //saves the current minute as a variable
 
   //This "if" loop contains all of the code to run the package on loop. The sampling rate set in the Adafruit Dashboard gives the
   //frequency this loop runs on. Every nth minute, this loop will transmit data to the Adafruit IO server
-  if (currentTime %delayTime == 0 && currentTime != lastTime ){
+  if (currentTime %delayTime == 0 && currentTime != lastTime || firstRun == true){
+    //We first run the MQTT connect function to make sure that our connection to the server is active! 
+    //If not, then the SIM7000 shield will reboot. All details found in the Void MQTT connect section below
+    MQTT_connect();
     //This section creates the timestamps from the RTC module
     sprintf(timeStamp, "%02d:%02d:%02d %02d/%02d/%02d", now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());  
     //the above line creates a timestamp that is used to date data saved to the SD card
@@ -224,8 +203,8 @@ void loop() {
     distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //The median function gives the median value of five quick samples
     delay(1000); //This second delay keeps the sensors from interfering with each other
     distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above for sensor 2
-    height1 = origHeight - (distance1)/(12); //convert from inches to feet
-    height2 = origHeight - (distance2)/(12);
+    height1 = initHght1 - (distance1)/(12); //convert from inches to feet
+    height2 = initHght2 - (distance2)/(12);
     Serial.print("Height 1 is: "); //uncomment to debug
     Serial.print(height1);
     Serial.print("  Height 2 is: ");
@@ -279,23 +258,13 @@ void loop() {
     //This section gauges the signal strength of the cellular connection
     // Read the raw RSSI value
     uint8_t n = modem.getRSSI();
-    int8_t r;
-    Serial.print(F("RSSI = ")); Serial.print(n); Serial.print(": ");
-    // Convert raw RSSI to dBm
-    if (n == 0) r = -115;
-    if (n == 1) r = -111;
-    if (n == 31) r = -52;
-    if ((n >= 2) && (n <= 30)) {
-      r = map(n, 2, 30, -110, -54);
-    }
-    Serial.print(r); Serial.println(F(" dBm"));
-    dtostrf(r, 1, 2, signalBuff); //This saves the signal strength in dBm to a string for transmission
+    Serial.print(n); Serial.println(F(" RSSI"));
+    dtostrf(n, 1, 2, signalBuff); //This saves the signal strength in raw RSSI to a string for transmission
 
     //This section connects the device to Adafruit IO and publishes the variables
     // Ensure the connection to the MQTT server is alive (this will make the first
     // connection and automatically reconnect when disconnected). See the MQTT_connect
     // function definition further below.
-    MQTT_connect();
 
     // Now publish all the data to different feeds!
     // The MQTT_publish_checkSuccess handles repetitive stuff.
@@ -311,12 +280,13 @@ void loop() {
     //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
     //pingCount = 0; //reset the ping count
+    firstRun = false;
   } 
   //Between sampling times, the Arduino is sent into light sleep which helps to save on power
   //It wakes up every 4 seconds to check the time and goes back to sleep unless the sampling rate
   //conditions are met in the "if" loop
   else {
-    LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
      delay(5);
   }
 }  
@@ -324,6 +294,47 @@ void loop() {
 //Our custom code ends here. Everything below are premade function codes
 
 //************************** Function Codes - Do not alter these! **************************
+void BotleticsSetup() {
+    //The following lines are for powering on and starting up 
+  //the SIM7000 Botletics shield
+  modem.powerOn(BOTLETICS_PWRKEY); // Power on the module
+  moduleSetup(); // Establishes first-time serial comm and prints IMEI
+  // Set modem to full functionality
+  modem.setFunctionality(1); // AT+CFUN=1
+  modem.setNetworkSettings(F("hologram")); // For Hologram SIM card
+    #if !defined(SIMCOM_3G) && !defined(SIMCOM_7500) && !defined(SIMCOM_7600)
+      // Disable data just to make sure it was actually off so that we can turn it on
+      if (!modem.enableGPRS(false)) //Serial.println(F("Failed to disable data!"));
+      // Turn on data
+      while (!modem.enableGPRS(true)) {
+        //Serial.println(F("Failed to enable data, retrying..."));
+        delay(2000);
+      }
+      Serial.println(F("Enabled data!"));
+    #endif
+      
+    //The following section connects the SIM card to the cellular network and enables data
+    //so we can transmit to Adafruit IO
+    // Connect to cell network and verify connection
+    // If unsuccessful, keep retrying every 2s until a connection is made
+    while (!netStatus()) {
+      Serial.println(F("Failed to connect to cell network, retrying..."));
+      delay(2000);
+    }
+    Serial.println(F("Connected to cell network!"));
+    // Open wireless connection if not already activated
+    if (!modem.wirelessConnStatus()) {
+      while (!modem.openWirelessConnection(true)) {
+        Serial.println(F("Failed to enable connection, retrying..."));
+        delay(2000);    
+      }
+      Serial.println(F("Enabled data!"));
+    }
+    else {
+      Serial.println(F("Data already enabled!"));
+    }
+    Serial.println(F("---------------------"));
+}
 //This function is what activates the SIM7000 card in the Botletics shield
 void moduleSetup() {
   // SIM7000 takes about 3s to turn on and SIM7500 takes about 15s
@@ -340,8 +351,7 @@ void moduleSetup() {
   if (! modem.begin(modemSS)) {
     Serial.println(F("Couldn't find modem"));
     modem.powerDown();
-    delay(10000);
-    resetFunc();    
+    return;    
   }
 
   type = modem.type();
@@ -410,7 +420,7 @@ void MQTT_connect() {
   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
       modem.powerDown();
       delay(10000);
-      resetFunc();
+      BotleticsSetup();
   }
   Serial.println("MQTT Connected!");
 }

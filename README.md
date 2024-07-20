@@ -5,10 +5,17 @@ IoT Water Level Sensor
 This is a stage sensor developed by the ARTS-Lab at the University of South Carolina and interns at the South Carolina Department of Health and Environmental Control (SC DHEC) Dam Safety Program. The purpose of this sensor is to provide a low-cost, open-source alternative to traditional gaging equipment. 
 
 <p align="center">
-<img src="media/gui_and_sensor.png" alt="drawing" width="600"/>
+<img src="media/Lake Wallace Installation 2.png" alt="drawing" width="600"/>
 </p>
 <p align="center">
-Figure 1: Sensor deployed on the primary spillway of a dam transmitting data to the GUI.
+Figure 1: Sensor deployed above inlet to Lake Wallace in Bennetsville, SC.
+</p>
+
+<p align="center">
+<img src="media/Adafruit GUI.png.png" alt="drawing" width="600"/>
+</p>
+<p align="center">
+Figure 2: The online GUI using Adafruit that displays water elevation in real time.
 </p>
 
 ## System Development
