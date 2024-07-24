@@ -84,7 +84,7 @@ const int trigPin1 = 47; //trigger pin for sonar sensor 1
 const int echoPin1 = 46; //echo pin for sonar sensor 1
 const int trigPin2 = 45; //trigger pin for sonar sensor 2
 const int echoPin2 = 44; //echo pin for sonar sensor 2
-const int maxDist = 450; // max distance in cm for sonar sensor, same for both
+const int maxDist = 600; // max distance in cm for sonar sensor, same for both
 NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable for sonar sensor 1
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
 float distance1=0; //variable for distance measured by sonar sensor 1
