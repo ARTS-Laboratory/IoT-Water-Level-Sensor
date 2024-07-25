@@ -1,0 +1,35 @@
+Material Ordering List,,,,,
+Part Name,,,,,
+Power Board PCBv0.2,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,Price per unit (5/14/2024)
+Barrell Jack,PJ-102B,CP-102B-ND,CUI Devices,J1,$0.65 
+Slide Switch,AS11AP,360-3719-ND,NKK Switches,SW1,$4.07 
+Diode SMD,DDZ16-7,31-DDZ16-7TR-ND,Diodes Incorporated,D1,$0.25 
+Resistor SMD,RL1206FR-070R1L,311-0.1LWTR-ND,YAGEO,R1,$0.43 
+Capacitor SMD,KGM31BR71H104KT,478-KGM31BR71H104KTTR-ND,KYOCERA AVX,C1 / C2,$0.18 
+Current Measuring Chip,INA219AIDR,296-23978-2-ND,Texas Instruments,U2,$2.16 
+Resistor SMD,RC1206FR-074K7L,311-4.70KFRTR-ND,YAGEO,R3 / R4,$0.10 
+5V Linear Regulator,LF50CDT-TR,497-1534-2-ND,STMicroelectronics,U1,$0.99 
+Power Board PCB,Custom,Custom,OSH Park,N/A,
+,,,,,
+Datalogging Boardv0.21,Manufacturer Part #,Digikey Part #,Supplier,Code on Schematic,
+3.3 V Linear Regulator,UA78M33IKVURG3,296-41035-2-ND,Texas Instruments,U1,$0.83 
+Capacitor SMD,CL31B104KBCNNNC,1276-1017-2-ND,Samsung Electro-Mechanics,C1,$0.11 
+Capacitor SMD,CL31B334KBFNNNE,1276-1138-2-ND,Samsung Electro-Mechanics,C2,$0.13 
+SD Module,B0B5H3421M,ASIN (Amazon),AOICRIE,Micro_SD1,$4.99 (for 12)
+Real Time Clock Module,B09KPC8JZQ,ASIN (Amazon),AITRIP,RT1,$7.99 (for 3)
+Ultrasonic Sensor (JSN-sr04t v3.0),B0C73XZRFQ,ASIN (Amazon),Shutao,US1 / US2,$21.99 (for 5)
+Datalogging Board PCB,Custom,Custom,OSH Park,N/A,
+,,,,,
+Separate Electronics and Parts,Manufacturer Part #,Supplier,Distributer #,,
+Arduino Mega,Arduino Mega 2560 Rev3,Elegoo,,,$19.99 
+Wifi Shield (WINC1500),3654,Adafruit,,,$24.95 
+Battery (12 V),YB12011000-USB,TalentCell,Amazon ASIN B016BJCRUO,,$61.99 
+Wires (M/F),Multicolored Dupont Wire,Elegoo,,,$6.59 
+Pins and Headers (M/F),8541770554,Glarks,Amazon ASIN B07CWSXY7P,,$12.98 
+MicroSD Card,AF8GUD3-WAAXX,"ATP Electronics, Inc.",Digikey #1282-AF8GUD3-WAAXX-ND,,$3.61 
+,,,,,
+Frame / Box Parts,Manufacturer Part #,Supplier,Amazon ASIN,Size,
+Waterproof Electronics Box,B0B87V7QTH,TICONN,B0B87V7QTH,"4.3 x 6.7  x 8.7""",$26.96 
+Cable Glands,B4190,Tuparka,B0BLYSTRL5,,$13.89 
+Solar Panel 30W,BC-30W-ZM,Suner Power,,,$69.95 
+SAE to Barrel Jack Wire,SAEPCSP-1,E-Outstanding,B08JG9XW3C,,$7.99 

@@ -3,7 +3,7 @@
 //Credit given to all creators of included libraries
 //This project is open source
 //Remote Cellular Water Height Sensor developed by Nicholas Liger, from previous work by Corrine Smith and Winford Janvrin
-//in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Health and Environmental Control (SCDHEC)
+//in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Environmental Services (SC DES)
 
 /************************* All Included Libraries - Do not change this section! *********************************/
 //The below three libraries are special. See the Readme for more information.
@@ -76,7 +76,7 @@ uint8_t type;
 char battBuff[12],dist1Buff[12],dist2Buff[12],tempBuff[12],signalBuff[12];
 
 //Variables for setting up the INA219 power monitoring device
-Adafruit_INA219 ina219(0x40); //declares the INA219 variable, do not edit
+Adafruit_INA219 ina219; //declares the INA219 variable, do not edit
 float busVoltage = 0; //the voltage reading on the battery input from INA219
 
 //Variables for setting up the two ultrasonic sensors
@@ -108,7 +108,7 @@ DS3231 myRTC; //RTC variable for using DS3231 library scripts
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 4; //time in minutes between between readings
+int delayTime = 5; //time in minutes between between readings
 
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
 bool firstRun = true;
@@ -128,8 +128,9 @@ void setup() {
   Serial.println("card initialized.");
 
   //These following lines start up and calibrate the INA219 chip
-  if (!ina219.begin()) { //these lines initialize the INA219 chip
+  while (!ina219.begin()) { //these lines initialize the INA219 chip
     Serial.println("Failed to find INA219 chip...");
+    delay(2000);
   }
   //To use a slightly lower 32V, 1A range (higher precision on amps):
   //ina219.setCalibration_32V_1A();
@@ -197,6 +198,7 @@ void loop() {
     //This line gets the voltage of the battery from the INA219 chip
     busVoltage = ina219.getBusVoltage_V()+0.8; //get voltage from battery and add 0.8V to account for drop across diode
     Serial.println(busVoltage);
+
     //This section gets the current distance from the sonar sensors and calculates
     //the current height based on the elevation of sensor minus the distance
     // h = h0 - d, and converts the reading to ft
@@ -277,9 +279,7 @@ void loop() {
     lastTime = currentTime; //This prevents the "if" loop from running again and again
     //in the same minute
 
-    //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
-    //pingCount = 0; //reset the ping count
     firstRun = false;
   } 
   //Between sampling times, the Arduino is sent into light sleep which helps to save on power

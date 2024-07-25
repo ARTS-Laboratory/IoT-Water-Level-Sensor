@@ -2,7 +2,7 @@
 //Credit given to all creators of included libraries
 //This project is open source
 //Remote Cellular Water Height Sensor developed by Nicholas Liger, from previous work by Corrine Smith and Winford Janvrin
-//in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Health and Environmental Control (SCDHEC)
+//in conjuction with ARTS - LAB at University of South and Carolina and South Carolina Department of Environmental Services (SC DES)
 
 /************************* All Included Libraries - Do not change this section! *********************************/
 //The below three libraries allow the Arduino to connect to the Adafruit IO
@@ -16,7 +16,6 @@
 #include <Wire.h> //library for using I2C communication
 #include <Adafruit_INA219.h> //Adafruit library for controlling INA219 voltage/current sensing chip
 #include <DS3231.h> //library for RTC module
-//******************
 #include <LowPower.h> //library for using the sleep mode watchdog timer
 #include "NewPing.h" //New Ping library for use with the sonar sensors
 
@@ -47,8 +46,11 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 Adafruit_MQTT_Publish sonar1 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-1");
 Adafruit_MQTT_Publish sonar2 = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/sonar-sensor-2");
 Adafruit_MQTT_Publish batteryVoltage = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/battery-voltage");
-//Subscribe feeds send data from Adafruit IO to Arduino
-Adafruit_MQTT_Subscribe initialHeight = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/height");
+Adafruit_MQTT_Publish internalTemperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/temperature");
+Adafruit_MQTT_Publish signalStrength = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/signal-strength");
+//All Subscribe paths are for sending data from the Adafruit server to the Arduino
+Adafruit_MQTT_Subscribe initialHeight1 = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/initial-height-1");
+Adafruit_MQTT_Subscribe initialHeight2 = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/initial-height-2");
 
 /****************************** Declaring Other Variables ***************************************/
 //Variables for setting up the INA219 power monitoring device
@@ -60,16 +62,15 @@ const int trigPin1 = 47; //trigger pin for sonar sensor 1
 const int echoPin1 = 46; //echo pin for sonar sensor 1
 const int trigPin2 = 45; //trigger pin for sonar sensor 2
 const int echoPin2 = 44; //echo pin for sonar sensor 2
-const int maxDist = 450; // max distance in cm for sonar sensor, same for both
+const int maxDist = 600; // max distance in cm for sonar sensor, same for both
 NewPing sonar_sensor_1(trigPin1, echoPin1, maxDist); //set up NewPing variable for sonar sensor 1
 NewPing sonar_sensor_2(trigPin2, echoPin2, maxDist); //set up NewPing variable for sonar sensor 2
 float distance1=0; //variable for distance measured by sonar sensor 1
 float distance2=0; //variable for distance measured by sonar sensor 2
-float origDist1=0; //Original distance for sensor 1 that is used to calibrate the height measurement of the water
-float origDist2=0; //Same as above for sensor 2
-float origHeight = 0; //Elevation of water at set up, used
+float initHght1 = 0; //Elevation of the ultrasonic sensor 1 at set up, used
 //to calibrate the sensor readings (usually done in reference to sea level)
-//This defaults to 0, but is actually set up in the Adafruit IO dashboard
+float initHght2 = 0; //Elevation of the ultrasonic sensor 1 at set up, used
+//to calibrate the sensor readings (usually done in reference to sea level)
 float height1 = 0; //Height variable for the current water height calculated from ultrasonic sensor 1
 //(usually done with reference to sea level)
 float height2 = 0; //Same for sensor 2
@@ -79,16 +80,16 @@ char timeStamp[32]; //Char/string variable for holding time stamp
 const int chipSelect = 4; //Chip Select for the SD card on the WINC1500 shield
 char dayStampFileName[20]; //Char/string variable for holding the day stamp for naming
 //file in SD card
-RTClib myRTC; //RTC variable for using DS3231 library scripts
+DS3231 myRTC; //RTC variable for using DS3231 library scripts
 
 //Variables governing the sampling rate of the sensor
 uint8_t currentTime = 1; //variable used to hold "minute" reading of RTC
 uint8_t lastTime = 1; //variable used to hold the previous "minute" reading of RTC
 //See code later for more description of the above variables
-int delayTime = 10; //time in minutes between between readings
-int pingCount = 0;//Used as part of code to keep connection to Adafruit IO alive
-//so that subscription commands work properly
+int delayTime = 5; //time in minutes between between readings
+
 #define MQTT_CONN_KEEPALIVE 300 //Adafruit IO defaults to 5 mins of connection
+bool firstRun = true;
 
 //*******************************Void Set up************************************
 void setup() {
@@ -127,87 +128,78 @@ void setup() {
   }
   Serial.println("ATWINC OK!");
 
-    //These lines set up the ability to subscribe from the Adafruit IO Dashboard
-    mqtt.subscribe(&initialHeight);
-    delay(1000);
-    MQTT_connect(); //This connects our sensor package to the Adafruit IO
-    delay(1000);
+  //These lines set up the ability to subscribe from the Adafruit IO Dashboard
+  mqtt.subscribe(&initialHeight1);
+  mqtt.subscribe(&initialHeight2);
+  MQTT_connect(); //This connects our sensor package to the Adafruit IO
 }
 
 void loop() {
-  DateTime now = myRTC.now(); //creates the "now" variable from the RTC to save the timeStamp
+  Serial.println("The loop begins here!");
+  //This if statement will not allow the program to proceed until the Initial Height for both ultrasonic sensors have been
+  //entered from the Adafruit IO
+  while (initHght1 == 0 || initHght2 == 0){
+      // This is our 'wait for incoming subscription packets' busy subloop
+    Adafruit_MQTT_Subscribe *subscription;
+    while ((subscription = mqtt.readSubscription(5000))) {
+      if (subscription == &initialHeight1) {
+        Serial.print(F("*** Got: "));
+        Serial.println((char *)initialHeight1.lastread);
+        initHght1 = atof((char *)initialHeight1.lastread);
+      }
+      if (subscription == &initialHeight2) {
+        Serial.print(F("*** Got: "));
+        Serial.println((char *)initialHeight2.lastread);
+        initHght2 = atof((char *)initialHeight2.lastread);
+      }
+    }
+    Serial.println(initHght1);
+    Serial.println(initHght2);
+    Serial.println("You have not entered the initial heights yet!");
+    delay(2000);
+    }
+  DateTime now = RTClib::now();; //creates the "now" variable from the RTC to save the timeStamp
   currentTime = now.minute(); //saves the current minute as a variable
 
   //This "if" loop contains all of the code to run the package on loop. The sampling rate set in the Adafruit Dashboard gives the
   //frequency this loop runs on. Every nth minute, this loop will transmit data to the Adafruit IO server
-  if (currentTime %delayTime == 0 && currentTime != lastTime ){
+  if (currentTime %delayTime == 0 && currentTime != lastTime || firstRun == true){
+    //We first run the MQTT connect function to make sure that our connection to the server is active! 
+    //If not, then the Wifi will attempt to reconnect. See details below
+    MQTT_connect();
     //This section creates the timestamps from the RTC module
     sprintf(timeStamp, "%02d:%02d:%02d %02d/%02d/%02d", now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());  
     //the above line creates a timestamp that is used to date data saved to the SD card
     snprintf(dayStampFileName, 20, "%02d%02d%02d.txt", now.day(), now.month(), now.year());  
     //the above line creates a name for the SD card files so that a new file is created every new day
-    //Serial.print(F("Date/Time: ")); //uncomment to debug
-    //Serial.println(timeStamp);
+    Serial.print(F("Date/Time: ")); //uncomment to debug
+    Serial.println(timeStamp);
+
+    //This line retrieves temperature in Celcius from the RTC
+    float rtcTemp = myRTC.getTemperature();
+    float tempF = rtcTemp*(1.8)+32; //convert celcius to farenheit
+    Serial.println(tempF);
 
     //This line gets the voltage of the battery from the INA219 chip
     busVoltage = ina219.getBusVoltage_V()+0.8; //get voltage from battery and add 0.8V to account for drop across diode
-
-    //This section connects the device to Adafruit IO and publishes the variables
-    // Ensure the connection to the MQTT server is alive (this will make the first
-    // connection and automatically reconnect when disconnected). See the MQTT_connect
-    // function definition further below.
-    MQTT_connect();
-    //subscription packet subloop, this runs and waits for the toggle switch in Adafruit IO to turn on
-    Adafruit_MQTT_Subscribe *subscription;
-    while ((subscription = mqtt.readSubscription(5000))) {
-      if (subscription == &initialHeight) {
-        Serial.print(F("*** Initial water elevation is now: "));
-        Serial.println((char *)initialHeight.lastread);
-        delay(100);
-        origHeight = atof((char *)initialHeight.lastread);
-        //These two lines ping the sonar sensors when the height is changed
-        //to calibrate them with an original distance between them and the water surface
-        origDist1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //ping_median 
-        //takes 5 quick readings with the sonar sensor and takes the median from this
-        //data set in order to eliminate misreads, then convert_in converts the ping_median
-        //which is in milliseconds into inches according to the speed of sound
-        delay(1000); //This second delay prevents the sensors from
-        //interfering with each other
-        origDist2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above
-        delay(1000);
-        //Serial.println("Original Distances are: "); uncomment to debug
-        // Serial.print(origDist1);
-        // Serial.print(" ");
-        // Serial.println(origDist2);
-      }
-    delay(2000);
-    }
+    Serial.println(busVoltage);
 
     //This section gets the current distance from the sonar sensors and calculates
-    //the current height based on the the original distance of the sonar sensor and original height of the water
-    // h = h0 + (d0-d), and converts the reading to ft
-    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //same as above
+    //the current height based on the elevation of sensor minus the distance
+    // h = h0 - d, and converts the reading to ft
+    distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //The median function gives the median value of five quick samples
     delay(1000); //This second delay keeps the sensors from interfering with each other
-    distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5));
-    height1 = origHeight + (origDist1 - distance1)/(12); //convert from inches to feet
-    height2 = origHeight + (origDist2 - distance2)/(12);
+    distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above for sensor 2
+    height1 = initHght1 - (distance1)/(12); //convert from inches to feet
+    height2 = initHght2 - (distance2)/(12);
+    Serial.print("Height 1 is: "); //uncomment to debug
+    Serial.print(height1);
+    Serial.print("  Height 2 is: ");
+    Serial.println(height2);
 
-    // Serial.print("Height 1 is: "); //uncomment to debug
-    // Serial.print(height1);
-    // Serial.print("  Height 2 is: ");
-    // Serial.print(height2);
-
-    // Now publish all the data to different feeds!
-   if (! sonar1.publish(height1)) {
-     Serial.println(F("Failed"));
-   }
-   if (! sonar2.publish(height2)) {
-     Serial.println(F("Failed"));
-   }
-  if (! batteryVoltage.publish(busVoltage)) {
-     Serial.println(F("Failed"));
-   }
-    // This section saves the data to the SD card
+    // This section saves the data to the SD card, before we attempt to transmit the data over the cell network
+    //Because the cell connection crashes frequently, we save the data to the SD card first so that we can have
+    //a more complete set of data for future investigation
     Serial.println(dayStampFileName);
     //This line creates a new file named with the day time stamp (DDMMYYYY)
     //or opens the file if this name already exists
@@ -217,15 +209,15 @@ void loop() {
     if (SD.exists(dayStampFileName) == 0) {
       File dataFile = SD.open(dayStampFileName, FILE_WRITE);
       if (dataFile){
-        dataFile.println("Ultrasonic 1 Height Reading (ft), Ultrasonic 2 Height Reading (ft), Battery Voltage (V), Timestamp");
+        dataFile.println("Ultrasonic 1 Height Reading (ft), Ultrasonic 2 Height Reading (ft), Battery Voltage (V), Internal Temperature (F), Timestamp");
         dataFile.close();
       }
       else {
       Serial.println("error opening datalog.txt");
       }
     }
-    //The below section creates a new entry in SD card which records all the relevant
-    //information and the timestamp in a CSV format
+    // The below section creates a new entry in SD card which records all the relevant
+    // information and the timestamp in a CSV format
     File dataFile = SD.open(dayStampFileName, FILE_WRITE);
     if (dataFile) {
         dataFile.print(height1);
@@ -233,6 +225,8 @@ void loop() {
         dataFile.print(height2);
         dataFile.print(",");
         dataFile.print(busVoltage);
+        dataFile.print(",");
+        dataFile.print(tempF);
         dataFile.print(",");
         dataFile.println(timeStamp);
         dataFile.close();
@@ -242,37 +236,40 @@ void loop() {
       Serial.println("error opening datalog.txt");
     }
 
+  //This line checks the Wifi signal in Raw signal strength (RSSI)
+  float n = WiFi.RSSI();
+  Serial.print(n); Serial.println(F(" RSSI"));
+
+  // Now publish all the data to different feeds via the Adafruit server!
+   if (! sonar1.publish(height1)) {
+     Serial.println(F("Failed"));
+   }
+   if (! sonar2.publish(height2)) {
+     Serial.println(F("Failed"));
+   }
+  if (! batteryVoltage.publish(busVoltage)) {
+     Serial.println(F("Failed"));
+   }
+    if (! internalTemperature.publish(tempF)) {
+     Serial.println(F("Failed"));
+   }
+    if (! signalStrength.publish(n)) {
+     Serial.println(F("Failed"));
+   }
   // Delay until next post
     lastTime = currentTime; //This prevents the "if" loop from running again and again
     //in the same minute
 
     //Serial.println((char *)initialHeight.lastread); //uncomment to debug
     Serial.println("Going to sleep!");
-    pingCount = 0; //reset the ping count
-    // Serial.println(busVoltage); //uncomment to debug
-    // Serial.println(height1);
-    // Serial.println(height2);
-    // Serial.println(origHeight);
-    delay(1000);
+    firstRun = false;
   } 
   //Between sampling times, the Arduino is sent into light sleep which helps to save on power
   //It wakes up every eight seconds to check the time and goes back to sleep unless the sampling rate
   //conditions are met in the "if" loop
   else {
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-    pingCount++; //Add to the pingCount
-    // Serial.println(pingCount); //uncomment to debug
     delay(5);
-    //The Adafruit IO connection will die every 5 minutes without activity and this
-    //prevents the subscription commands from working. The below code pings the Adafruit server
-    //every minute to keep the connection alive in case the sampling rate is greater than 5 minutes
-    if (pingCount == 10){
-      if(! mqtt.ping()) {
-      mqtt.disconnect();
-      }
-      delay(1000);
-      pingCount = 0; //reset the ping counter
-    }
   }
 }  
 
