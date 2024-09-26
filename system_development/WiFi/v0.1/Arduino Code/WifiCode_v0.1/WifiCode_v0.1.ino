@@ -74,6 +74,7 @@ float initHght2 = 0; //Elevation of the ultrasonic sensor 1 at set up, used
 float height1 = 0; //Height variable for the current water height calculated from ultrasonic sensor 1
 //(usually done with reference to sea level)
 float height2 = 0; //Same for sensor 2
+int failCount = 0; //used to track failures to stop infinite loops
 
 //Variables for setting up the SD card and RTC
 char timeStamp[32]; //Char/string variable for holding time stamp
@@ -190,6 +191,27 @@ void loop() {
     distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //The median function gives the median value of five quick samples
     delay(1000); //This second delay keeps the sensors from interfering with each other
     distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //same as above for sensor 2
+
+    //To further reduce misreads, check if distance is equal to zero
+    //If the sensor times out, then the Arduino will record the distance
+    //inaccurately as zero, and the water surface elevation will appear to
+    //be equal to the installation height, so we check here if distance1 or distance2
+    //equals zero, and if so, we try again until we get a non-zero answer
+    failCount = 0; //reset the failure counter before going into the while loop to stop an infinite loop
+    //if failCount exceeds ten, then Arduino moves on to prevent all data for the run being lost
+    while (distance1 == 0 && failCount <10){
+      Serial.println("Distance 1 is reading zero");
+      distance1 = sonar_sensor_1.convert_in(sonar_sensor_1.ping_median(5)); //The median function gives the median value of five quick samples 
+      delay(1000);
+      failCount++;
+    }
+    failCount = 0; //reset the failure counter before going into the while loop to stop an infinite loop
+    while (distance2 == 0 && failCount <10){
+      Serial.println("Distance 2 is reading zero");
+      distance2 = sonar_sensor_2.convert_in(sonar_sensor_2.ping_median(5)); //The median function gives the median value of five quick samples 
+      delay(1000);
+      failCount++;
+    }
     height1 = initHght1 - (distance1)/(12); //convert from inches to feet
     height2 = initHght2 - (distance2)/(12);
     Serial.print("Height 1 is: "); //uncomment to debug
@@ -209,7 +231,7 @@ void loop() {
     if (SD.exists(dayStampFileName) == 0) {
       File dataFile = SD.open(dayStampFileName, FILE_WRITE);
       if (dataFile){
-        dataFile.println("Ultrasonic 1 Height Reading (ft), Ultrasonic 2 Height Reading (ft), Battery Voltage (V), Internal Temperature (F), Timestamp");
+        dataFile.println("Ultrasonic 1 Height Reading (ft),Ultrasonic 2 Height Reading (ft),Battery Voltage (V),Internal Temperature (F),Timestamp");
         dataFile.close();
       }
       else {
@@ -236,17 +258,22 @@ void loop() {
       Serial.println("error opening datalog.txt");
     }
 
+  MQTT_connect(); //Recheck the connection to Wifi
   //This line checks the Wifi signal in Raw signal strength (RSSI)
   float n = WiFi.RSSI();
   Serial.print(n); Serial.println(F(" RSSI"));
 
   // Now publish all the data to different feeds via the Adafruit server!
-   if (! sonar1.publish(height1)) {
-     Serial.println(F("Failed"));
-   }
-   if (! sonar2.publish(height2)) {
-     Serial.println(F("Failed"));
-   }
+  if (distance1 != 0){
+    if (! sonar1.publish(height1)) {
+      Serial.println(F("Failed"));
+    }
+  }
+  if (distance2 != 0){
+    if (! sonar2.publish(height2)) {
+      Serial.println(F("Failed"));
+    }
+  }
   if (! batteryVoltage.publish(busVoltage)) {
      Serial.println(F("Failed"));
    }
@@ -280,6 +307,7 @@ void loop() {
 // Should be called in the loop function and it will take care if connecting.
 /************************** Connecting/Reconnecting Check to the Adafruit IO Server - Do not change! ************************************/
 void MQTT_connect() {
+  failCount=0; //reset the fail counter
   int8_t ret;
 
   // attempt to connect to Wifi network:
@@ -304,11 +332,15 @@ void MQTT_connect() {
 
   Serial.print("Connecting to MQTT... ");
 
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+  while ((ret = mqtt.connect()) != 0 && failCount<10) { // connect will return 0 for connected
        Serial.println(mqtt.connectErrorString(ret));
        Serial.println("Retrying MQTT connection in 5 seconds...");
        mqtt.disconnect();
        delay(5000);  // wait 5 seconds
+       failCount++;
+  }
+  if (failCount == 10){
+    Serial.println("The Wifi could not connect currently.");
   }
   Serial.println("MQTT Connected!");
 }
